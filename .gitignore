@@ -1,0 +1,42 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.so
+*.orig
+*.log
+*.pot
+*.py,cover
+*.coverage
+*.cover
+.coverage.*
+.pytest_cache/
+.cache/
+
+# Virtual environments
+.env
+.env.*
+venv/
+.venv/
+ENV/
+
+# Django runtime artifacts
+/db.sqlite3
+/media/
+/logs/
+/output/
+/outputs/
+/uploads/
+/staticfiles/
+/tmp/
+
+# Node and frontend cache (if any)
+node_modules/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

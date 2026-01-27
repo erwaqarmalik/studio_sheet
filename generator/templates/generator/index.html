@@ -1,0 +1,275 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Passport Photo Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ✅ CSS via Django static -->
+<link rel="stylesheet" href="{% static 'generator/style.css' %}">
+<!-- Cropper.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+
+<body>
+<div class="container">
+
+<!-- =========================
+     BRANDING HEADER
+========================= -->
+<header class="brand-header">
+    <div class="brand-logo">
+        <i class="bi bi-image" style="font-size: 40px;"></i>
+        <div class="brand-text">
+            <h1 class="brand-name">StudioSheet</h1>
+            <span class="brand-tagline">One photo. Multiple prints. Zero waste.</span>
+        </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        {% if user.is_authenticated %}
+            <span style="color: #667eea;">👋 {{ user.username }}</span>
+            <a href="{% url 'generator:history' %}" style="text-decoration: none; color: #667eea;">
+                <i class="bi bi-clock-history"></i> History
+            </a>
+            <a href="{% url 'generator:profile' %}" style="text-decoration: none; color: #667eea;">
+                <i class="bi bi-person"></i> Profile
+            </a>
+            <a href="{% url 'generator:logout' %}" style="text-decoration: none; color: #667eea;">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        {% else %}
+            <a href="{% url 'generator:login' %}" style="text-decoration: none; color: #667eea;">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+            <a href="{% url 'generator:register' %}" style="text-decoration: none; color: #667eea;">
+                <i class="bi bi-person-plus"></i> Register
+            </a>
+        {% endif %}
+    </div>
+</header>
+
+<h1>📸 Passport Photo Generator</h1>
+<p class="subtitle">Create professional passport photos in minutes</p>
+
+<form method="post" enctype="multipart/form-data" id="passportForm">
+{% csrf_token %}
+
+<!-- =========================
+     ERROR MESSAGES
+========================= -->
+{% if error %}
+<div class="error">
+    <i class="bi bi-exclamation-circle-fill" style="font-size: 20px;"></i>
+    {{ error }}
+</div>
+{% endif %}
+
+
+
+<!-- =========================
+     DRAG & DROP UPLOAD ZONE
+========================= -->
+<div class="upload-zone" id="uploadZone">
+    <input type="file" name="photos" id="photoInput" multiple accept="image/*" required>
+    <div class="upload-content">
+        <div class="upload-icon">
+            <i class="bi bi-cloud-arrow-up" style="font-size: 48px;"></i>
+        </div>
+        <h3>Drag & drop your photos here</h3>
+        <p>or <span class="browse-link">browse files</span></p>
+        <small>Maximum file size: 10MB • Formats: JPG, JPEG, PNG • Auto-cropped to 3.5×4.5 cm</small>
+    </div>
+</div>
+
+<div id="preview" class="preview-grid"></div>
+
+<!-- =========================
+     CROP MODAL
+========================= -->
+<div id="cropModal" class="crop-modal">
+    <div class="crop-modal-content">
+        <div class="crop-modal-header">
+            <h3>Crop Image</h3>
+            <button type="button" class="crop-modal-close" id="cropModalClose" aria-label="Close">
+                <i class="bi bi-x-lg" style="font-size: 24px;"></i>
+            </button>
+        </div>
+        <div class="crop-modal-body">
+            <div class="crop-container">
+                <img id="cropImage" src="" alt="Crop preview">
+            </div>
+            <div class="crop-info">
+                <p><strong>Aspect Ratio:</strong> 3.5×4.5 cm (Passport Photo)</p>
+                <p class="crop-hint">Adjust the crop area to frame your photo correctly</p>
+            </div>
+        </div>
+        <div class="crop-modal-footer">
+            <button type="button" class="crop-btn crop-btn-cancel" id="cropCancel">Cancel</button>
+            <button type="button" class="crop-btn crop-btn-primary" id="cropApply">Apply Crop</button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     OPTIONS
+========================= -->
+<div class="section-header">
+    <h2>Settings</h2>
+    <p>Customize your passport photo layout</p>
+</div>
+
+<div class="options-grid">
+
+  <div class="field">
+    <label>
+        <i class="bi bi-file-earmark-text" style="font-size: 16px;"></i>
+        Paper Size
+    </label>
+    <select name="paper_size" id="paperSize">
+      {% for size in paper_sizes %}
+        <option value="{{ size }}">{{ size }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field">
+    <label>
+        <i class="bi bi-arrows-move" style="font-size: 16px;"></i>
+        Orientation
+    </label>
+    <select name="orientation" id="orientation">
+      <option value="portrait">Portrait</option>
+      <option value="landscape">Landscape</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>
+        <i class="bi bi-border" style="font-size: 16px;"></i>
+        Margin (cm)
+    </label>
+    <input type="number" name="margin_cm" id="margin" value="1.0" step="0.1" min="0">
+  </div>
+
+  <div class="field">
+    <label>
+        <i class="bi bi-distribute-horizontal" style="font-size: 16px;"></i>
+        Column Gap (cm)
+    </label>
+    <input type="number" name="col_gap_cm" id="colGap" value="0.4" step="0.1" min="0">
+  </div>
+
+  <div class="field">
+    <label>
+        <i class="bi bi-distribute-vertical" style="font-size: 16px;"></i>
+        Row Gap (cm)
+    </label>
+    <input type="number" name="row_gap_cm" id="rowGap" value="0.4" step="0.1" min="0">
+  </div>
+
+  <div class="field">
+    <label>
+        <i class="bi bi-grid-3x3-gap" style="font-size: 16px;"></i>
+        Cut Lines
+    </label>
+    <select name="cut_lines">
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>
+        <i class="bi bi-file-earmark" style="font-size: 16px;"></i>
+        Output Type
+    </label>
+    <select name="output_type">
+      <option value="PDF">PDF</option>
+      <option value="JPEG">JPEG</option>
+    </select>
+  </div>
+
+</div>
+
+
+<!-- =========================
+     LIVE STATS
+========================= -->
+<div id="stats" class="stats">
+    <div class="stat-item">
+        <span class="stat-label">Rows</span>
+        <span class="stat-value" id="statRows">–</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+        <span class="stat-label">Columns</span>
+        <span class="stat-value" id="statCols">–</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+        <span class="stat-label">Photos per page</span>
+        <span class="stat-value" id="statTotal">–</span>
+    </div>
+</div>
+
+<button type="submit" id="submitBtn" class="submit-btn">
+    <span id="submitText">Generate Output</span>
+    <span id="submitLoader" class="loading" style="display: none;"></span>
+</button>
+
+</form>
+
+<!-- =========================
+     DOWNLOAD LINK
+========================= -->
+{% if output_url %}
+<div class="success">
+    <i class="bi bi-download" style="font-size: 24px;"></i>
+    <div>
+        <strong>Success!</strong>
+        <a href="{{ output_url }}" download>Download Output</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- =========================
+     BRANDING FOOTER
+========================= -->
+<footer class="brand-footer">
+    <div class="footer-content">
+        <div class="footer-brand">
+            <i class="bi bi-image" style="font-size: 24px;"></i>
+            <span class="footer-brand-name">PhotoGen</span>
+        </div>
+        <div class="footer-links">
+            <a href="#" class="footer-link">About</a>
+            <a href="#" class="footer-link">Privacy</a>
+            <a href="#" class="footer-link">Terms</a>
+        </div>
+        <div class="footer-copyright">
+            <p>&copy; 2024 PhotoGen. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+</div>
+<script id="passport-config-data" type="application/json">
+{{ config_json|safe }}
+</script>
+<!-- =========================
+     DJANGO → JS DATA (SAFE)
+========================= -->
+<script id="paper-sizes-data" type="application/json">
+{{ paper_sizes_json|safe }}
+</script>
+
+<!-- Cropper.js JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- ✅ JS via Django static -->
+<script src="{% static 'generator/app.js' %}"></script>
+
+</body>
+</html>
