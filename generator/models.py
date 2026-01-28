@@ -36,6 +36,12 @@ class UserProfile(models.Model):
         help_text="Phone number (10-15 digits)"
     )
     
+    address = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Full address"
+    )
+    
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text="When the profile was created"

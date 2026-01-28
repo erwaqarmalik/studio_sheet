@@ -46,7 +46,7 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = UserProfile
-        fields = ['date_of_birth', 'phone_number']
+        fields = ['date_of_birth', 'phone_number', 'address']
         widgets = {
             'date_of_birth': forms.DateInput(
                 attrs={
@@ -59,6 +59,12 @@ class UserProfileForm(forms.ModelForm):
                 attrs={
                     'class': 'form-control',
                     'placeholder': 'Phone Number (e.g., +1234567890)'
+                }
+            ),
+            'address': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Full Address'
                 }
             ),
         }
