@@ -204,8 +204,13 @@ class ViewTests(TestCase):
     """Tests for views."""
     
     def setUp(self):
-        """Set up test client."""
+        """Set up test client and user."""
         self.client = Client()
+        self.test_user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
     
     def create_test_image_file(self):
         """Create a valid test image file for upload."""
@@ -220,13 +225,23 @@ class ViewTests(TestCase):
         )
     
     def test_index_get(self):
-        """Test GET request to index page."""
+        """Test GET request to index page (requires login)."""
+        # Login required - should redirect to login
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+        
+        # After login, should succeed
+        self.client.login(username='testuser', password='testpass123')
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Passport Photo Generator')
+        self.assertContains(response, 'StudioSheet')
     
     def test_index_post_no_files(self):
-        """Test POST with no files uploaded."""
+        """Test POST with no files uploaded (requires login)."""
+        # Login first
+        self.client.login(username='testuser', password='testpass123')
+        
         response = self.client.post('/', {
             'paper_size': 'A4',
             'orientation': 'portrait',
@@ -235,7 +250,10 @@ class ViewTests(TestCase):
         self.assertContains(response, 'No photos uploaded')
     
     def test_index_post_with_valid_file(self):
-        """Test POST with valid image file."""
+        """Test POST with valid image file (requires login)."""
+        # Login first
+        self.client.login(username='testuser', password='testpass123')
+        
         test_file = self.create_test_image_file()
         
         response = self.client.post('/', {
@@ -255,7 +273,10 @@ class ViewTests(TestCase):
         # Note: actual file generation might fail in test environment
     
     def test_index_post_invalid_numeric_values(self):
-        """Test POST with invalid numeric values (should use defaults)."""
+        """Test POST with invalid numeric values (requires login)."""
+        # Login first
+        self.client.login(username='testuser', password='testpass123')
+        
         test_file = self.create_test_image_file()
         
         response = self.client.post('/', {
@@ -307,27 +328,6 @@ class AuthenticationTests(TestCase):
             email='test@example.com',
             password='testpass123'
         )
-    
-    def test_register_page_loads(self):
-        """Test registration page loads correctly."""
-        response = self.client.get('/register/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Create Account')
-    
-    def test_register_new_user(self):
-        """Test user registration."""
-        response = self.client.post('/register/', {
-            'username': 'newuser',
-            'email': 'new@example.com',
-            'password1': 'complexpass123',
-            'password2': 'complexpass123',
-        })
-        
-        # Should redirect after successful registration
-        self.assertEqual(response.status_code, 302)
-        
-        # User should exist
-        self.assertTrue(User.objects.filter(username='newuser').exists())
     
     def test_login_page_loads(self):
         """Test login page loads correctly."""

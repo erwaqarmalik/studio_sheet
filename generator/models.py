@@ -4,6 +4,50 @@ Models for passport photo generator with user authentication.
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.validators import RegexValidator
+
+
+class UserProfile(models.Model):
+    """
+    Extended user profile with additional fields.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        help_text="Link to Django User"
+    )
+    
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True,
+        help_text="User's date of birth"
+    )
+    
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r'^\+?1?\d{9,15}$',
+                message='Enter a valid phone number (9-15 digits, optional +)',
+            )
+        ],
+        help_text="Phone number (10-15 digits)"
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the profile was created"
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Last profile update"
+    )
+    
+    def __str__(self):
+        return f"{self.user.first_name} {self.user.last_name} ({self.user.username})"
 
 
 class PhotoGeneration(models.Model):

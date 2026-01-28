@@ -10,34 +10,7 @@ from django.http import HttpRequest, HttpResponse
 from django.db.models import Count, Sum
 from typing import Optional
 
-from .forms import UserRegistrationForm
 from .models import PhotoGeneration
-
-
-def register(request: HttpRequest) -> HttpResponse:
-    """
-    User registration view.
-    
-    Args:
-        request: Django HTTP request
-    
-    Returns:
-        Rendered registration page or redirect on success
-    """
-    if request.user.is_authenticated:
-        return redirect('generator:index')
-    
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, f'Welcome {user.username}! Your account has been created.')
-            return redirect('generator:index')
-    else:
-        form = UserRegistrationForm()
-    
-    return render(request, 'generator/register.html', {'form': form})
 
 
 def user_login(request: HttpRequest) -> HttpResponse:

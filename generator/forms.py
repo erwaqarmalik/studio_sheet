@@ -2,8 +2,8 @@
 Forms for passport photo generator and user authentication.
 """
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from .models import UserProfile
 from .widgets import MultipleFileInput
 from .utils import PAPER_SIZES
 
@@ -23,30 +23,62 @@ class PassportForm(forms.Form):
     )
 
 
-class UserRegistrationForm(UserCreationForm):
-    """Extended user registration form with email."""
+class UserProfileForm(forms.ModelForm):
+    """
+    Extended user profile form with personal details.
+    """
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'})
+    )
+    
+    last_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'})
+    )
+    
     email = forms.EmailField(
         required=True,
-        help_text='Required. Enter a valid email address.',
-        widget=forms.EmailInput(attrs={'class': 'form-control'})
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'})
     )
     
     class Meta:
-        model = User
-        fields = ['username', 'email', 'password1', 'password2']
+        model = UserProfile
+        fields = ['date_of_birth', 'phone_number']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'date_of_birth': forms.DateInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'date',
+                    'placeholder': 'Date of Birth'
+                }
+            ),
+            'phone_number': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Phone Number (e.g., +1234567890)'
+                }
+            ),
         }
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        self.user = user
+        if user:
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
     
     def save(self, commit=True):
-        """Save user with email."""
-        user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
+        profile = super().save(commit=False)
+        if self.user:
+            self.user.first_name = self.cleaned_data['first_name']
+            self.user.last_name = self.cleaned_data['last_name']
+            self.user.email = self.cleaned_data['email']
+            if commit:
+                self.user.save()
         if commit:
-            user.save()
-        return user
+            profile.save()
+        return profile

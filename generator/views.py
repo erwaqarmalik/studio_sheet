@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils.text import get_valid_filename
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
+from django.contrib.auth.decorators import login_required
 
 from .models import PhotoGeneration
 from .utils import (
@@ -27,10 +28,11 @@ from .validators import (
 logger = logging.getLogger('generator')
 
 
+@login_required(login_url='generator:login')
 def index(request: HttpRequest) -> HttpResponse:
     """
     Main view for passport photo generator.
-    Handles file uploads and generates PDF/JPEG output.
+    Requires user login. Handles file uploads and generates PDF/JPEG output.
     
     Args:
         request: Django HTTP request object
