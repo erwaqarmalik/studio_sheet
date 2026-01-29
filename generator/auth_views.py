@@ -34,7 +34,7 @@ def user_login(request: HttpRequest) -> HttpResponse:
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
+                messages.success(request, f'Welcome back, {user.first_name}{" "}{user.last_name}!')
                 next_url = request.GET.get('next', 'generator:index')
                 return redirect(next_url)
         else:

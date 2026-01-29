@@ -78,10 +78,10 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-3 col-sm-6">
-            <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card text-white bg-primary">
                 <div class="card-body text-center py-4">
-                    <i class="bi bi-folder-fill" style="font-size: 40px;"></i>
-                    <h2 class="mt-3 mb-0">{{ stats.total_generations }}</h2>
+                    <i class="bi bi-folder-fill" style="font-size: 48px;"></i>
+                    <h2 class="mt-3 mb-0 text-white">{{ stats.total_generations }}</h2>
                     <p class="mb-0 text-white-50">Total Generations</p>
                 </div>
             </div>
@@ -89,8 +89,8 @@
         <div class="col-md-3 col-sm-6">
             <div class="card text-white bg-success">
                 <div class="card-body text-center py-4">
-                    <i class="bi bi-images" style="font-size: 40px;"></i>
-                    <h2 class="mt-3 mb-0">{{ stats.total_photos }}</h2>
+                    <i class="bi bi-images" style="font-size: 48px;"></i>
+                    <h2 class="mt-3 mb-0 text-white">{{ stats.total_photos }}</h2>
                     <p class="mb-0 text-white-50">Photos Processed</p>
                 </div>
             </div>
@@ -98,8 +98,8 @@
         <div class="col-md-3 col-sm-6">
             <div class="card text-white bg-danger">
                 <div class="card-body text-center py-4">
-                    <i class="bi bi-file-pdf-fill" style="font-size: 40px;"></i>
-                    <h2 class="mt-3 mb-0">{{ stats.pdf_count }}</h2>
+                    <i class="bi bi-file-pdf-fill" style="font-size: 48px;"></i>
+                    <h2 class="mt-3 mb-0 text-white">{{ stats.pdf_count }}</h2>
                     <p class="mb-0 text-white-50">PDF Files</p>
                 </div>
             </div>
@@ -107,8 +107,8 @@
         <div class="col-md-3 col-sm-6">
             <div class="card text-white bg-info">
                 <div class="card-body text-center py-4">
-                    <i class="bi bi-file-image-fill" style="font-size: 40px;"></i>
-                    <h2 class="mt-3 mb-0">{{ stats.jpeg_count }}</h2>
+                    <i class="bi bi-file-image-fill" style="font-size: 48px;"></i>
+                    <h2 class="mt-3 mb-0 text-white">{{ stats.jpeg_count }}</h2>
                     <p class="mb-0 text-white-50">JPEG Files</p>
                 </div>
             </div>
@@ -173,10 +173,10 @@
     {% else %}
     <div class="card">
         <div class="card-body text-center py-5">
-            <i class="bi bi-inbox" style="font-size: 80px; color: #ddd;"></i>
+            <i class="bi bi-inbox" style="font-size: 100px; color: #cbd5e0;"></i>
             <h2 class="mt-4 mb-3">No generations yet</h2>
-            <p class="text-muted mb-4">Your photo generation history will appear here.</p>
-            <a href="{% url 'generator:index' %}" class="btn btn-primary">
+            <p class="text-muted mb-4" style="font-size: 1.1rem;">Your photo generation history will appear here.</p>
+            <a href="{% url 'generator:index' %}" class="btn btn-primary btn-lg">
                 <i class="bi bi-plus-circle me-2"></i>Create your first photo sheet
             </a>
         </div>
