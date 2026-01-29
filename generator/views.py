@@ -145,7 +145,6 @@ def index(request: HttpRequest) -> HttpResponse:
                 photo_height_cm = custom_height
             else:
                 # Use preset size
-                from .config import PHOTO_SIZES
                 if photo_size in PHOTO_SIZES:
                     size_info = PHOTO_SIZES[photo_size]
                     photo_width_cm = size_info["width"]
