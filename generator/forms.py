@@ -25,48 +25,79 @@ class PassportForm(forms.Form):
 
 class UserProfileForm(forms.ModelForm):
     """
-    Extended user profile form with personal details.
+    Comprehensive user profile form with complete address and personal details.
+    All fields are required.
     """
     first_name = forms.CharField(
         max_length=30,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'})
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'First Name'
+        })
     )
     
     last_name = forms.CharField(
         max_length=150,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'})
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Last Name'
+        })
     )
     
     email = forms.EmailField(
         required=True,
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'})
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Email Address'
+        })
     )
     
     class Meta:
         model = UserProfile
-        fields = ['date_of_birth', 'phone_number', 'address']
+        fields = [
+            'date_of_birth',
+            'phone_number',
+            'street_address',
+            'landmark',
+            'city',
+            'state',
+            'postal_code',
+            'country',
+        ]
         widgets = {
-            'date_of_birth': forms.DateInput(
-                attrs={
-                    'class': 'form-control',
-                    'type': 'date',
-                    'placeholder': 'Date of Birth'
-                }
-            ),
-            'phone_number': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Phone Number (e.g., +1234567890)'
-                }
-            ),
-            'address': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Full Address'
-                }
-            ),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'placeholder': 'Date of Birth'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+1 (555) 123-4567'
+            }),
+            'street_address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'House number, street name'
+            }),
+            'landmark': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nearby landmark (Optional)'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'City/Town'
+            }),
+            'state': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '110001'
+            }),
+            'country': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
     
     def __init__(self, *args, user=None, **kwargs):
@@ -76,6 +107,15 @@ class UserProfileForm(forms.ModelForm):
             self.fields['first_name'].initial = user.first_name
             self.fields['last_name'].initial = user.last_name
             self.fields['email'].initial = user.email
+        
+        # Make landmark optional
+        self.fields['landmark'].required = False
+    
+    def clean_postal_code(self):
+        postal_code = self.cleaned_data.get('postal_code')
+        if postal_code and not postal_code.isdigit():
+            raise forms.ValidationError('Postal code must contain only digits.')
+        return postal_code
     
     def save(self, commit=True):
         profile = super().save(commit=False)
@@ -85,6 +125,10 @@ class UserProfileForm(forms.ModelForm):
             self.user.email = self.cleaned_data['email']
             if commit:
                 self.user.save()
+        
+        # Mark profile as complete
+        profile.profile_complete = profile.is_complete()
+        
         if commit:
             profile.save()
         return profile

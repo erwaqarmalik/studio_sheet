@@ -6,10 +6,7 @@ python-decouple>=3.8
 Pillow>=10.0.0
 reportlab>=4.0.0
 
-# Production Server (optional)
-gunicorn>=21.0.0
+# Database
+psycopg2-binary>=2.9.9
 
-# Development Tools (optional)
-pytest>=7.4.0
-pytest-django>=4.5.0
-coverage>=7.3.0
+# Production Server
