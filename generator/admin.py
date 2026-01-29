@@ -110,7 +110,4 @@ admin.site.register(PhotoGeneration, PhotoGenerationAdmin)
 admin.site.register(UserRateLimit, UserRateLimitAdmin)
 admin.site.register(GenerationAudit, GenerationAuditAdmin)
 admin.site.register(FeatureUsage, FeatureUsageAdmin)
-
-# Register models
-admin.site.register(PhotoGeneration, PhotoGenerationAdmin)
 admin.site.register(UserProfile)
