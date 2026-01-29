@@ -36,11 +36,17 @@ body {
     color: #2d3748 !important;
 }
 
+.nav-item {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
 .nav-link {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 500;
     color: #4a5568 !important;
     transition: color 0.2s ease;
+    padding: 8px 16px !important;
 }
 
 .nav-link:hover {
@@ -76,12 +82,14 @@ body {
     color: white;
     font-size: 2rem;
     margin-bottom: 0.5rem;
+    font-weight: 700;
 }
 
 .card-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.2rem;
     margin-bottom: 0;
+    font-weight: 400;
 }
 
 .card-body {
@@ -136,8 +144,9 @@ body {
 }
 
 .btn-sm {
-    padding: 8px 20px;
-    font-size: 0.95rem;
+    padding: 10px 24px;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 h1 {
