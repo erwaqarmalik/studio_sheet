@@ -65,7 +65,8 @@ def resolve_paper_size(paper_size: str, orientation: str) -> Tuple[float, float,
 
 
 def calculate_grid(paper_w_cm: float, paper_h_cm: float, margin: float, 
-                   col_gap: float, row_gap: float) -> Tuple[int, int]:
+                   col_gap: float, row_gap: float, photo_w_cm: float = None, 
+                   photo_h_cm: float = None) -> Tuple[int, int]:
     """
     Calculate grid dimensions for photo layout.
     
@@ -75,15 +76,21 @@ def calculate_grid(paper_w_cm: float, paper_h_cm: float, margin: float,
         margin: Margin in cm
         col_gap: Column gap in cm
         row_gap: Row gap in cm
+        photo_w_cm: Photo width in cm (default: 3.5 cm)
+        photo_h_cm: Photo height in cm (default: 4.5 cm)
     
     Returns:
         Tuple of (columns, rows)
     """
+    if photo_w_cm is None:
+        photo_w_cm = PASSPORT_CONFIG["photo_width_cm"]
+    if photo_h_cm is None:
+        photo_h_cm = PASSPORT_CONFIG["photo_height_cm"]
     usable_w = paper_w_cm - 2 * margin
     usable_h = paper_h_cm - 2 * margin
 
-    cols = int((usable_w + col_gap) // (PHOTO_W_CM + col_gap))
-    rows = int((usable_h + row_gap) // (PHOTO_H_CM + row_gap))
+    cols = int((usable_w + col_gap) // (photo_w_cm + col_gap))
+    rows = int((usable_h + row_gap) // (photo_h_cm + row_gap))
 
     return max(cols, 1), max(rows, 1)
 
@@ -110,17 +117,23 @@ def draw_cut_lines_img(draw: ImageDraw.Draw, x: int, y: int, w: int, h: int,
     draw.line((x + w, y + h, x + w, y + h - size), fill="black", width=CUT_LINE_WIDTH_IMG)
 
 
-def crop_to_passport_aspect_ratio(image_path: str) -> bool:
+def crop_to_passport_aspect_ratio(image_path: str, width_cm: float = None, height_cm: float = None) -> bool:
     """
-    Crop an image to match passport photo aspect ratio (3.5x4.5 cm = 7:9).
+    Crop an image to match photo aspect ratio.
     Uses centered cropping to preserve the center of the image.
     
     Args:
         image_path: Path to the image file to crop
+        width_cm: Target width in cm (default: 3.5 cm)
+        height_cm: Target height in cm (default: 4.5 cm)
     
     Returns:
         True if cropping was successful, False otherwise
     """
+    if width_cm is None:
+        width_cm = PASSPORT_CONFIG["photo_width_cm"]
+    if height_cm is None:
+        height_cm = PASSPORT_CONFIG["photo_height_cm"]
     try:
         # Open and load image (not using context manager since we need to save after)
         img = Image.open(image_path)
@@ -130,7 +143,7 @@ def crop_to_passport_aspect_ratio(image_path: str) -> bool:
             img = img.convert("RGB")
         
         original_width, original_height = img.size
-        target_aspect = PHOTO_W_CM / PHOTO_H_CM  # 3.5 / 4.5 = 0.777... = 7/9
+        target_aspect = width_cm / height_cm
         current_aspect = original_width / original_height
         
         # If aspect ratios match (within small tolerance), no cropping needed
@@ -192,9 +205,11 @@ def generate_pdf(
     row_gap_cm: float,
     cut_lines: bool,
     output_dir: str,
+    photo_width_cm: float = None,
+    photo_height_cm: float = None,
 ) -> str:
     """
-    Generate a PDF file with passport photos arranged in a grid.
+    Generate a PDF file with photos arranged in a grid.
     
     Args:
         photos: List of photo file paths
@@ -206,6 +221,8 @@ def generate_pdf(
         row_gap_cm: Row gap in centimeters
         cut_lines: Whether to draw cut lines
         output_dir: Output directory path
+        photo_width_cm: Photo width in cm (default: 3.5 cm)
+        photo_height_cm: Photo height in cm (default: 4.5 cm)
     
     Returns:
         Path to the generated PDF file
@@ -213,6 +230,10 @@ def generate_pdf(
     Raises:
         IOError: If output directory doesn't exist or file cannot be written
     """
+    if photo_width_cm is None:
+        photo_width_cm = PASSPORT_CONFIG["photo_width_cm"]
+    if photo_height_cm is None:
+        photo_height_cm = PASSPORT_CONFIG["photo_height_cm"]
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     
@@ -225,8 +246,8 @@ def generate_pdf(
 
     c = canvas.Canvas(output_path, pagesize=(paper_w_pt, paper_h_pt))
 
-    photo_w = PHOTO_W_CM * cm
-    photo_h = PHOTO_H_CM * cm
+    photo_w = photo_width_cm * cm
+    photo_h = photo_height_cm * cm
 
     cols, rows = calculate_grid(
         paper_w_cm,
@@ -234,6 +255,8 @@ def generate_pdf(
         margin_cm,
         col_gap_cm,
         row_gap_cm,
+        photo_width_cm,
+        photo_height_cm,
     )
 
     per_page = cols * rows
@@ -322,9 +345,11 @@ def generate_jpeg(
     row_gap_cm: float,
     cut_lines: bool,
     output_dir: str,
+    photo_width_cm: float = None,
+    photo_height_cm: float = None,
 ) -> List[str]:
     """
-    Generate JPEG files with passport photos arranged in a grid.
+    Generate JPEG files with photos arranged in a grid.
     
     Args:
         photos: List of photo file paths
@@ -336,6 +361,8 @@ def generate_jpeg(
         row_gap_cm: Row gap in centimeters
         cut_lines: Whether to draw cut lines
         output_dir: Output directory path
+        photo_width_cm: Photo width in cm (default: 3.5 cm)
+        photo_height_cm: Photo height in cm (default: 4.5 cm)
     
     Returns:
         List of paths to the generated JPEG files
@@ -343,6 +370,10 @@ def generate_jpeg(
     Raises:
         IOError: If output directory doesn't exist or files cannot be written
     """
+    if photo_width_cm is None:
+        photo_width_cm = PASSPORT_CONFIG["photo_width_cm"]
+    if photo_height_cm is None:
+        photo_height_cm = PASSPORT_CONFIG["photo_height_cm"]
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
@@ -360,14 +391,13 @@ def generate_jpeg(
     paper_h_px = cm_to_px(paper_h_cm)
 
     # -----------------------------
-    # LAYOUT CALCULATION
-    # -----------------------------
+    # Layout calculation
     margin_px = cm_to_px(margin_cm)
     col_gap_px = cm_to_px(col_gap_cm)
     row_gap_px = cm_to_px(row_gap_cm)
 
-    photo_w_px = cm_to_px(PHOTO_W_CM)
-    photo_h_px = cm_to_px(PHOTO_H_CM)
+    photo_w_px = cm_to_px(photo_width_cm)
+    photo_h_px = cm_to_px(photo_height_cm)
 
     usable_w = paper_w_px - 2 * margin_px
     usable_h = paper_h_px - 2 * margin_px
