@@ -263,8 +263,8 @@ def generate_pdf(
     slot = 0
 
     # Calculate centering offsets
-    grid_width_cm = cols * PHOTO_W_CM + (cols - 1) * col_gap_cm if cols > 0 else 0
-    grid_height_cm = rows * PHOTO_H_CM + (rows - 1) * row_gap_cm if rows > 0 else 0
+    grid_width_cm = cols * photo_width_cm + (cols - 1) * col_gap_cm if cols > 0 else 0
+    grid_height_cm = rows * photo_height_cm + (rows - 1) * row_gap_cm if rows > 0 else 0
     usable_w_cm = paper_w_cm - 2 * margin_cm
     usable_h_cm = paper_h_cm - 2 * margin_cm
     offset_x_cm = (usable_w_cm - grid_width_cm) / 2 if cols > 0 else 0
@@ -283,9 +283,9 @@ def generate_pdf(
             col = slot % cols
             row = slot // cols
 
-            x = (margin_cm + offset_x_cm + col * (PHOTO_W_CM + col_gap_cm)) * cm
+            x = (margin_cm + offset_x_cm + col * (photo_width_cm + col_gap_cm)) * cm
             y = paper_h_pt - (
-                (margin_cm + offset_y_cm + PHOTO_H_CM + row * (PHOTO_H_CM + row_gap_cm)) * cm
+                (margin_cm + offset_y_cm + photo_height_cm + row * (photo_height_cm + row_gap_cm)) * cm
             )
 
             try:

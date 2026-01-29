@@ -68,6 +68,42 @@ def index(request: HttpRequest) -> HttpResponse:
             )
             os.makedirs(output_dir, exist_ok=True)
 
+            # ==================================================
+            # DETERMINE PHOTO SIZE FIRST (needed for cropping)
+            # ==================================================
+            photo_size = request.POST.get(
+                "default_photo_size",
+                PASSPORT_CONFIG["default_photo_size"],
+            )
+            
+            photo_width_cm = PASSPORT_CONFIG["photo_width_cm"]
+            photo_height_cm = PASSPORT_CONFIG["photo_height_cm"]
+            
+            # Handle custom size
+            if photo_size == "custom":
+                custom_width = validate_numeric_field(
+                    request.POST.get("custom_width_cm"),
+                    "Custom width",
+                    min_val=1.0,
+                    max_val=20.0,
+                    default=PASSPORT_CONFIG["photo_width_cm"]
+                )
+                custom_height = validate_numeric_field(
+                    request.POST.get("custom_height_cm"),
+                    "Custom height",
+                    min_val=1.0,
+                    max_val=20.0,
+                    default=PASSPORT_CONFIG["photo_height_cm"]
+                )
+                photo_width_cm = custom_width
+                photo_height_cm = custom_height
+            else:
+                # Use preset size
+                if photo_size in PHOTO_SIZES:
+                    size_info = PHOTO_SIZES[photo_size]
+                    photo_width_cm = size_info["width"]
+                    photo_height_cm = size_info["height"]
+
             saved_photos = []
             for f in uploaded_files:
                 # Sanitize filename to prevent path traversal
@@ -113,42 +149,6 @@ def index(request: HttpRequest) -> HttpResponse:
             # Validate orientation
             if orientation not in ["portrait", "landscape"]:
                 orientation = PASSPORT_CONFIG["default_orientation"]
-
-            # ==================================================
-            # PHOTO SIZE SELECTION
-            # ==================================================
-            photo_size = request.POST.get(
-                "default_photo_size",
-                PASSPORT_CONFIG["default_photo_size"],
-            )
-            
-            photo_width_cm = PASSPORT_CONFIG["photo_width_cm"]
-            photo_height_cm = PASSPORT_CONFIG["photo_height_cm"]
-            
-            # Handle custom size
-            if photo_size == "custom":
-                custom_width = validate_numeric_field(
-                    request.POST.get("custom_width_cm"),
-                    "Custom width",
-                    min_val=1.0,
-                    max_val=20.0,
-                    default=PASSPORT_CONFIG["photo_width_cm"]
-                )
-                custom_height = validate_numeric_field(
-                    request.POST.get("custom_height_cm"),
-                    "Custom height",
-                    min_val=1.0,
-                    max_val=20.0,
-                    default=PASSPORT_CONFIG["photo_height_cm"]
-                )
-                photo_width_cm = custom_width
-                photo_height_cm = custom_height
-            else:
-                # Use preset size
-                if photo_size in PHOTO_SIZES:
-                    size_info = PHOTO_SIZES[photo_size]
-                    photo_width_cm = size_info["width"]
-                    photo_height_cm = size_info["height"]
 
             margin_cm = validate_numeric_field(
                 request.POST.get("margin_cm", PASSPORT_CONFIG["default_margin_cm"]),
