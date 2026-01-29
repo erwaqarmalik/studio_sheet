@@ -22,10 +22,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const PAPER_SIZES = JSON.parse(jsonEl.textContent);
 
     /* =====================================
-       CONSTANTS
+       LOAD PHOTO SIZES
     ===================================== */
-    const PHOTO_W = CONFIG.photo_width_cm;
-    const PHOTO_H = CONFIG.photo_height_cm;
+    const photoSizesEl = document.getElementById("photo-sizes-data");
+    if (!photoSizesEl) {
+        console.error("photo-sizes-data not found");
+        return;
+    }
+    const PHOTO_SIZES = JSON.parse(photoSizesEl.textContent);
+
+    /* =====================================
+       CONSTANTS & DYNAMIC PHOTO DIMENSIONS
+    ===================================== */
+    let PHOTO_W = CONFIG.photo_width_cm;
+    let PHOTO_H = CONFIG.photo_height_cm;
+    let currentPhotoSize = 'passport_35x45';
+    let customWidth = null;
+    let customHeight = null;
 
     /* =====================================
        ELEMENTS
@@ -48,6 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const statCols = document.getElementById("statCols");
     const statTotal = document.getElementById("statTotal");
 
+    const defaultPhotoSize = document.getElementById("defaultPhotoSize");
+    const customSizeContainer = document.getElementById("customSizeContainer");
+    const customWidthInput = document.getElementById("customWidth");
+    const customHeightInput = document.getElementById("customHeight");
+    const uploadSizeHint = document.getElementById("uploadSizeHint");
+
     /* =====================================
        CROP MODAL ELEMENTS
     ===================================== */
@@ -56,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cropModalClose = document.getElementById("cropModalClose");
     const cropCancel = document.getElementById("cropCancel");
     const cropApply = document.getElementById("cropApply");
+    const cropAspectRatio = document.getElementById("cropAspectRatio");
     let cropper = null;
     let currentCropIndex = null;
     let currentCropModalUrl = null; // Store object URL for modal cleanup
@@ -137,6 +157,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelector('[name="output_type"]').value =
         CONFIG.default_output_type;
+
+    /* =====================================
+       PHOTO SIZE SELECTION HANDLER
+    ===================================== */
+    function updatePhotoSize() {
+        currentPhotoSize = defaultPhotoSize.value;
+        
+        if (currentPhotoSize === 'custom') {
+            // Show custom size inputs
+            customSizeContainer.style.display = 'block';
+            
+            // Get values or use defaults
+            customWidth = parseFloat(customWidthInput.value) || 3.5;
+            customHeight = parseFloat(customHeightInput.value) || 4.5;
+            
+            // Set default values if empty
+            if (!customWidthInput.value) customWidthInput.value = '3.5';
+            if (!customHeightInput.value) customHeightInput.value = '4.5';
+            
+            PHOTO_W = customWidth;
+            PHOTO_H = customHeight;
+        } else {
+            // Hide custom size inputs
+            customSizeContainer.style.display = 'none';
+            const sizeInfo = PHOTO_SIZES[currentPhotoSize];
+            if (sizeInfo) {
+                PHOTO_W = sizeInfo.width;
+                PHOTO_H = sizeInfo.height;
+            }
+        }
+        
+        // Update upload hint
+        if (uploadSizeHint) {
+            uploadSizeHint.textContent = `Auto-cropped to ${PHOTO_W}×${PHOTO_H} cm`;
+        }
+        
+        calculateGrid();
+        console.log(`Photo size updated: ${PHOTO_W}×${PHOTO_H} cm`);
+    }
+
+    defaultPhotoSize.addEventListener('change', updatePhotoSize);
+    customWidthInput.addEventListener('input', updatePhotoSize);
+    customHeightInput.addEventListener('input', updatePhotoSize);
+
+    // Initialize photo size
+    updatePhotoSize();
 
     /* =====================================
        HELPERS
@@ -359,6 +425,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Show modal first
         cropModal.classList.add('active');
         
+        // Update crop aspect ratio display
+        if (cropAspectRatio) {\n            const sizeLabel = currentPhotoSize === 'custom' \n                ? `Custom (${PHOTO_W}×${PHOTO_H} cm)`\n                : PHOTO_SIZES[currentPhotoSize]?.label || `${PHOTO_W}×${PHOTO_H} cm`;\n            cropAspectRatio.textContent = sizeLabel;\n        };
+        
         // Set image source and wait for it to load before initializing cropper
         cropImage.src = '';
         
@@ -403,8 +472,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             
-            // Calculate aspect ratio (3.5 / 4.5 = 0.777...)
-            const aspectRatio = CONFIG.photo_width_cm / CONFIG.photo_height_cm;
+            // Calculate aspect ratio using current photo size
+            const aspectRatio = PHOTO_W / PHOTO_H;
             
             // Destroy any existing cropper first
             if (cropper) {
@@ -537,11 +606,9 @@ document.addEventListener("DOMContentLoaded", () => {
         cropApply.textContent = 'Processing...';
 
         try {
-            // Calculate dimensions maintaining 3.5x4.5 cm ratio at 300 DPI
-            // 3.5 cm = 1.378 inches, 4.5 cm = 1.772 inches
-            // At 300 DPI: 3.5cm = 413px, 4.5cm = 531px
-            const targetWidth = Math.round((CONFIG.photo_width_cm / 2.54) * 300);
-            const targetHeight = Math.round((CONFIG.photo_height_cm / 2.54) * 300);
+            // Calculate dimensions using current photo size at 300 DPI
+            const targetWidth = Math.round((PHOTO_W / 2.54) * 300);
+            const targetHeight = Math.round((PHOTO_H / 2.54) * 300);
 
             // Get cropped canvas
             const canvas = cropper.getCroppedCanvas({

@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <!-- Custom CSS -->
 <link rel="stylesheet" href="{% static 'generator/style.css' %}">
+<link rel="stylesheet" href="{% static 'generator/custom_size.css' %}">
 </head>
 
 <body>
@@ -100,7 +101,7 @@
         </div>
         <h3>Drag & drop your photos here</h3>
         <p>or <span class="browse-link">browse files</span></p>
-        <small>Maximum file size: 10MB • Formats: JPG, JPEG, PNG • Auto-cropped to 3.5×4.5 cm</small>
+        <small>Maximum file size: 10MB • Formats: JPG, JPEG, PNG • <span id="uploadSizeHint">Auto-cropped to 3.5×4.5 cm</span></small>
     </div>
 </div>
 
@@ -122,7 +123,7 @@
                 <img id="cropImage" src="" alt="Crop preview">
             </div>
             <div class="crop-info">
-                <p><strong>Aspect Ratio:</strong> 3.5×4.5 cm (Passport Photo)</p>
+                <p><strong>Aspect Ratio:</strong> <span id="cropAspectRatio">3.5×4.5 cm (Passport Photo)</span></p>
                 <p class="crop-hint">Adjust the crop area to frame your photo correctly</p>
             </div>
         </div>
@@ -205,6 +206,33 @@
       <option value="PDF">PDF</option>
       <option value="JPEG">JPEG</option>
     </select>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">
+        <i class="bi bi-image me-2"></i>Photo Size
+    </label>
+    <select name="default_photo_size" id="defaultPhotoSize" class="form-select">
+      {% for key, info in photo_sizes.items %}
+        <option value="{{ key }}" {% if key == 'passport_35x45' %}selected{% endif %}>
+          {{ info.label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-6" id="customSizeContainer" style="display: none;">
+    <label class="form-label">
+        <i class="bi bi-rulers me-2"></i>Custom Size (cm)
+    </label>
+    <div class="input-group">
+      <input type="number" id="customWidth" name="custom_width_cm" 
+             class="form-control" placeholder="Width (cm)" min="1" max="20" step="0.1" value="3.5">
+      <span class="input-group-text">×</span>
+      <input type="number" id="customHeight" name="custom_height_cm" 
+             class="form-control" placeholder="Height (cm)" min="1" max="20" step="0.1" value="4.5">
+    </div>
+    <small class="form-text text-muted">Enter width and height in centimeters (1-20 cm)</small>
   </div>
 
 </div>
@@ -305,6 +333,10 @@
 ========================= -->
 <script id="paper-sizes-data" type="application/json">
 {{ paper_sizes_json|safe }}
+</script>
+
+<script id="photo-sizes-data" type="application/json">
+{{ photo_sizes_json|safe }}
 </script>
 
 <!-- Cropper.js JS -->

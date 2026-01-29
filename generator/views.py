@@ -18,7 +18,7 @@ from .utils import (
     crop_to_passport_aspect_ratio,
     PAPER_SIZES,
 )
-from .config import PASSPORT_CONFIG
+from .config import PASSPORT_CONFIG, PHOTO_SIZES
 from .validators import (
     validate_image_file,
     validate_numeric_field,
@@ -245,5 +245,7 @@ def index(request: HttpRequest) -> HttpResponse:
             "paper_sizes": PAPER_SIZES.keys(),
             "paper_sizes_json": json.dumps(PAPER_SIZES),
             "config_json": json.dumps(PASSPORT_CONFIG),
+            "photo_sizes": PHOTO_SIZES,
+            "photo_sizes_json": json.dumps(PHOTO_SIZES),
         },
     )
