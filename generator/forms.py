@@ -3,15 +3,17 @@ Forms for passport photo generator and user authentication.
 """
 from django import forms
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, PhotoConfiguration
 from .widgets import MultipleFileInput
 from .utils import PAPER_SIZES
+from .config import PHOTO_SIZES
 
 
 class PassportForm(forms.Form):
-    """Form for passport photo generation."""
+    """Form for passport photo generation with variable sizes."""
     photos = forms.FileField(
-        widget=MultipleFileInput(attrs={"multiple": True})
+        widget=MultipleFileInput(attrs={"multiple": True}),
+        help_text="Select one or more photos"
     )
     paper_size = forms.ChoiceField(
         choices=[(k, k) for k in PAPER_SIZES.keys()]
@@ -21,6 +23,68 @@ class PassportForm(forms.Form):
     output_type = forms.ChoiceField(
         choices=[("PDF", "PDF"), ("JPEG", "JPEG")]
     )
+    
+    # Global default photo size (can be overridden per photo)
+    default_photo_size = forms.ChoiceField(
+        choices=[(k, v["label"]) for k, v in PHOTO_SIZES.items()],
+        initial="passport_35x45",
+        help_text="Default photo size for all photos"
+    )
+    
+    default_copies = forms.IntegerField(
+        min_value=1,
+        max_value=100,
+        initial=6,
+        help_text="Default number of copies per photo"
+    )
+
+
+class PhotoConfigurationForm(forms.ModelForm):
+    """Form for configuring individual photo size and copies."""
+    
+    class Meta:
+        model = PhotoConfiguration
+        fields = ['photo_size', 'custom_width_cm', 'custom_height_cm', 'copies']
+        widgets = {
+            'photo_size': forms.Select(attrs={
+                'class': 'form-select photo-size-select'
+            }),
+            'custom_width_cm': forms.NumberInput(attrs={
+                'class': 'form-control custom-width',
+                'placeholder': 'Width (cm)',
+                'min': 1,
+                'max': 20,
+                'step': 0.1,
+                'style': 'display: none;'
+            }),
+            'custom_height_cm': forms.NumberInput(attrs={
+                'class': 'form-control custom-height',
+                'placeholder': 'Height (cm)',
+                'min': 1,
+                'max': 20,
+                'step': 0.1,
+                'style': 'display: none;'
+            }),
+            'copies': forms.NumberInput(attrs={
+                'class': 'form-control copies-input',
+                'min': 1,
+                'max': 100
+            }),
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        photo_size = cleaned_data.get('photo_size')
+        custom_width = cleaned_data.get('custom_width_cm')
+        custom_height = cleaned_data.get('custom_height_cm')
+        
+        if photo_size == 'custom':
+            if not custom_width or not custom_height:
+                raise forms.ValidationError(
+                    "Both width and height are required for custom size."
+                )
+        
+        return cleaned_data
 
 
 class UserProfileForm(forms.ModelForm):

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import UserProfile, PhotoGeneration, UserRateLimit, GenerationAudit, FeatureUsage
+from .models import UserProfile, PhotoGeneration, UserRateLimit, GenerationAudit, FeatureUsage, PhotoConfiguration
 
 
 class UserProfileInline(admin.StackedInline):
@@ -35,6 +35,14 @@ class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline, UserRateLimitInline)
 
 
+class PhotoConfigurationInline(admin.TabularInline):
+    """Inline editor for PhotoConfiguration in PhotoGeneration admin."""
+    model = PhotoConfiguration
+    extra = 0
+    fields = ('photo_index', 'photo_size', 'custom_width_cm', 'custom_height_cm', 'copies')
+    readonly_fields = ('photo_index',)
+
+
 class PhotoGenerationAdmin(admin.ModelAdmin):
     """Admin for PhotoGeneration model."""
     list_display = ('session_id', 'user', 'output_type', 'created_at', 'total_copies', 'file_size_bytes')
@@ -52,6 +60,7 @@ class PhotoGenerationAdmin(admin.ModelAdmin):
             'fields': ('output_path', 'output_url', 'file_size_bytes', 'total_copies')
         }),
     )
+    inlines = (PhotoConfigurationInline,)
 
 
 class UserRateLimitAdmin(admin.ModelAdmin):
@@ -107,6 +116,7 @@ class FeatureUsageAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(PhotoGeneration, PhotoGenerationAdmin)
+admin.site.register(PhotoConfiguration)
 admin.site.register(UserRateLimit, UserRateLimitAdmin)
 admin.site.register(GenerationAudit, GenerationAuditAdmin)
 admin.site.register(FeatureUsage, FeatureUsageAdmin)

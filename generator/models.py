@@ -464,6 +464,86 @@ class FeatureUsage(models.Model):
         return f"{user_str} - {self.feature} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
 
 
+class PhotoConfiguration(models.Model):
+    """
+    Per-photo configuration for size and copies.
+    Allows each photo in a batch to have different dimensions and copy counts.
+    """
+    PHOTO_SIZE_CHOICES = [
+        ("passport_35x45", "Passport (3.5×4.5 cm)"),
+        ("passport_small", "Small Passport (2.5×3.5 cm)"),
+        ("id_card", "ID Card (3.0×4.0 cm)"),
+        ("visa_3x4", "Visa (3.0×4.0 cm)"),
+        ("visa_4x6", "Visa Large (4.0×6.0 cm)"),
+        ("uk_visa", "UK Visa (4.45×5.59 cm)"),
+        ("us_visa", "US Passport (5.0×5.0 cm)"),
+        ("schengen", "Schengen (3.5×4.5 cm)"),
+        ("australia", "Australia (4.5×5.5 cm)"),
+        ("canada", "Canada (3.5×4.5 cm)"),
+        ("custom", "Custom Size"),
+    ]
+    
+    generation = models.ForeignKey(
+        PhotoGeneration,
+        on_delete=models.CASCADE,
+        related_name='photo_configs',
+        help_text="Generation this photo belongs to"
+    )
+    
+    photo_index = models.IntegerField(
+        help_text="Index of photo in batch (0-based)"
+    )
+    
+    photo_size = models.CharField(
+        max_length=30,
+        choices=PHOTO_SIZE_CHOICES,
+        default="passport_35x45",
+        help_text="Selected photo size preset"
+    )
+    
+    custom_width_cm = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1.0), MaxValueValidator(20.0)],
+        help_text="Custom width in cm (if photo_size is 'custom')"
+    )
+    
+    custom_height_cm = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1.0), MaxValueValidator(20.0)],
+        help_text="Custom height in cm (if photo_size is 'custom')"
+    )
+    
+    copies = models.IntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text="Number of copies for this photo"
+    )
+    
+    class Meta:
+        ordering = ['generation', 'photo_index']
+        indexes = [
+            models.Index(fields=['generation', 'photo_index']),
+        ]
+        unique_together = [['generation', 'photo_index']]
+    
+    def __str__(self):
+        return f"{self.generation.session_id} - Photo {self.photo_index} ({self.photo_size}, {self.copies} copies)"
+    
+    def get_actual_dimensions(self):
+        """Get the actual width and height in cm."""
+        if self.photo_size == "custom":
+            return (self.custom_width_cm, self.custom_height_cm)
+        
+        from generator.config import PHOTO_SIZES
+        if self.photo_size in PHOTO_SIZES:
+            size_info = PHOTO_SIZES[self.photo_size]
+            return (size_info["width"], size_info["height"])
+        
+        return None
+
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """
