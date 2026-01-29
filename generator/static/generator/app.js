@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     const PHOTO_SIZES = JSON.parse(photoSizesEl.textContent);
+    console.log("Loaded PHOTO_SIZES:", PHOTO_SIZES);
 
     /* =====================================
        CONSTANTS & DYNAMIC PHOTO DIMENSIONS
@@ -66,6 +67,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const customWidthInput = document.getElementById("customWidth");
     const customHeightInput = document.getElementById("customHeight");
     const uploadSizeHint = document.getElementById("uploadSizeHint");
+
+    // Debug: Check if elements exist
+    if (!defaultPhotoSize) console.warn("defaultPhotoSize not found");
+    if (!customSizeContainer) console.warn("customSizeContainer not found");
+    if (!customWidthInput) console.warn("customWidthInput not found");
+    if (!customHeightInput) console.warn("customHeightInput not found");
+    if (!uploadSizeHint) console.warn("uploadSizeHint not found");
 
     /* =====================================
        CROP MODAL ELEMENTS
@@ -201,6 +209,12 @@ document.addEventListener("DOMContentLoaded", () => {
     customWidthInput.addEventListener('input', updatePhotoSize);
     customHeightInput.addEventListener('input', updatePhotoSize);
 
+    console.log("Event listeners attached for photo size changes");
+    console.log("defaultPhotoSize:", defaultPhotoSize);
+    console.log("customSizeContainer:", customSizeContainer);
+    console.log("customWidthInput:", customWidthInput);
+    console.log("customHeightInput:", customHeightInput);
+    
     // Initialize photo size
     updatePhotoSize();
 
@@ -426,7 +440,12 @@ document.addEventListener("DOMContentLoaded", () => {
         cropModal.classList.add('active');
         
         // Update crop aspect ratio display
-        if (cropAspectRatio) {\n            const sizeLabel = currentPhotoSize === 'custom' \n                ? `Custom (${PHOTO_W}×${PHOTO_H} cm)`\n                : PHOTO_SIZES[currentPhotoSize]?.label || `${PHOTO_W}×${PHOTO_H} cm`;\n            cropAspectRatio.textContent = sizeLabel;\n        };
+        if (cropAspectRatio) {
+            const sizeLabel = currentPhotoSize === 'custom' 
+                ? `Custom (${PHOTO_W}×${PHOTO_H} cm)`
+                : PHOTO_SIZES[currentPhotoSize]?.label || `${PHOTO_W}×${PHOTO_H} cm`;
+            cropAspectRatio.textContent = sizeLabel;
+        }
         
         // Set image source and wait for it to load before initializing cropper
         cropImage.src = '';
