@@ -101,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let fileList = [];
     let fileDataMap = new Map(); // Map to store file data URLs
     let croppedFilesMap = new Map(); // Map to store cropped File objects (index -> File)
+    let bgRemovedMap = new Map(); // Map to track which images have background removed (index -> true/false)
     let objectUrlMap = new Map(); // Map to store object URLs for cleanup (index -> objectURL)
 
     /* =====================================
@@ -407,6 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = document.createElement("div");
             card.className = "preview-card";
             const isCropped = croppedFilesMap.has(index);
+            const isBgRemoved = bgRemovedMap.get(index) || false;
             card.innerHTML = `
                 <button type="button" class="delete-btn" data-index="${index}" aria-label="Delete photo">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -415,15 +417,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     </svg>
                 </button>
                 ${isCropped ? '<span class="crop-badge">✓ Cropped</span>' : ''}
+                ${isBgRemoved ? '<span class="crop-badge" style="background: #28a745; top: 30px;">✓ BG Removed</span>' : ''}
                 <img src="${dataUrl}" alt="${file.name}">
-                <button type="button" class="crop-btn" data-index="${index}" aria-label="Crop photo">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="9" y1="3" x2="9" y2="21"></line>
-                        <line x1="3" y1="9" x2="21" y2="9"></line>
-                    </svg>
-                    <span>Crop</span>
-                </button>
+                <div class="preview-actions">
+                    <button type="button" class="crop-btn" data-index="${index}" aria-label="Crop photo">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                        </svg>
+                        <span>Crop</span>
+                    </button>
+                    <button type="button" class="bg-remove-btn" data-index="${index}" aria-label="Remove background">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        <span>Remove BG</span>
+                    </button>
+                </div>
                 <div class="file-info">${formatFileSize(file.size)}</div>
                 <input type="number"
                        name="copies[]"
@@ -448,6 +461,18 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const index = parseInt(btn.getAttribute('data-index'));
+                openCropModal(index);
+            });
+        });
+        
+        // Add background removal button event listeners
+        preview.querySelectorAll('.bg-remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.getAttribute('data-index'));
+                openBgRemovalModal(index);
+            });
+        });
                 openCropModal(index);
             });
         });
@@ -794,6 +819,85 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         }
     });
+
+    /* =====================================
+       BACKGROUND REMOVAL MODAL
+    ===================================== */
+    async function openBgRemovalModal(fileIndex) {
+        const file = fileList[fileIndex];
+        if (!file) return;
+
+        // Get current file (cropped or original)
+        let sourceFile = croppedFilesMap.has(fileIndex) ? croppedFilesMap.get(fileIndex) : file;
+        
+        // Ask user for background color
+        const bgColor = prompt('Enter background color (hex code):', '#FFFFFF') || '#FFFFFF';
+        
+        if (!confirm(`Remove background and replace with ${bgColor}?`)) {
+            return;
+        }
+
+        // Show processing indicator
+        const card = preview.querySelector(`[data-index="${fileIndex}"]`)?.closest('.preview-card');
+        if (card) {
+            const img = card.querySelector('img');
+            img.style.opacity = '0.5';
+            img.style.filter = 'blur(2px)';
+        }
+
+        try {
+            // Create image from file
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(sourceFile);
+            
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = objectUrl;
+            });
+
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            // Apply background removal
+            await removeBackground(canvas, bgColor);
+
+            // Convert to blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+            
+            // Create new file
+            const processedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+            });
+
+            // Store processed file
+            croppedFilesMap.set(fileIndex, processedFile);
+            bgRemovedMap.set(fileIndex, true);
+
+            // Cleanup
+            URL.revokeObjectURL(objectUrl);
+
+            // Update preview
+            renderPreview();
+            updateFileInput();
+
+        } catch (error) {
+            console.error('Background removal failed:', error);
+            alert('Failed to remove background. Please try again.');
+            
+            // Restore card appearance
+            if (card) {
+                const img = card.querySelector('img');
+                img.style.opacity = '1';
+                img.style.filter = 'none';
+            }
+        }
+    }
 
     /* =====================================
        UPDATE FILE INPUT WITH CROPPED FILES
