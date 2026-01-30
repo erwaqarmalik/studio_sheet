@@ -68,10 +68,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const customHeightInput = document.getElementById("customHeight");
     const uploadSizeHint = document.getElementById("uploadSizeHint");
     
-    const removeBg = document.getElementById("removeBg");
-    const bgColorContainer = document.getElementById("bgColorContainer");
-    const bgColor = document.getElementById("bgColor");
-    const bgColorPreset = document.getElementById("bgColorPreset");
+    // Crop modal background removal elements
+    const cropRemoveBg = document.getElementById("cropRemoveBg");
+    const cropBgColorContainer = document.getElementById("cropBgColorContainer");
+    const cropBgColor = document.getElementById("cropBgColor");
+    const cropBgColorPreset = document.getElementById("cropBgColorPreset");
 
     // Debug: Check if elements exist
     if (!defaultPhotoSize) console.warn("defaultPhotoSize not found");
@@ -214,21 +215,21 @@ document.addEventListener("DOMContentLoaded", () => {
     customWidthInput.addEventListener('input', updatePhotoSize);
     customHeightInput.addEventListener('input', updatePhotoSize);
     
-    // Background removal toggle
-    if (removeBg && bgColorContainer) {
-        removeBg.addEventListener('change', function() {
+    // Crop modal background removal toggle
+    if (cropRemoveBg && cropBgColorContainer) {
+        cropRemoveBg.addEventListener('change', function() {
             if (this.value === 'yes') {
-                bgColorContainer.style.display = 'block';
+                cropBgColorContainer.style.display = 'block';
             } else {
-                bgColorContainer.style.display = 'none';
+                cropBgColorContainer.style.display = 'none';
             }
         });
     }
     
-    // Background color preset selector
-    if (bgColorPreset && bgColor) {
-        bgColorPreset.addEventListener('change', function() {
-            bgColor.value = this.value;
+    // Crop modal background color preset selector
+    if (cropBgColorPreset && cropBgColor) {
+        cropBgColorPreset.addEventListener('change', function() {
+            cropBgColor.value = this.value;
         });
     }
 
@@ -240,6 +241,82 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Initialize photo size
     updatePhotoSize();
+
+    /* =====================================
+       BACKGROUND REMOVAL
+    ===================================== */
+    function removeBackground(canvas, bgColor) {
+        return new Promise((resolve, reject) => {
+            try {
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Convert hex to RGB
+                const hexColor = bgColor.replace('#', '');
+                const bgR = parseInt(hexColor.substr(0, 2), 16);
+                const bgG = parseInt(hexColor.substr(2, 2), 16);
+                const bgB = parseInt(hexColor.substr(4, 2), 16);
+                
+                // Simple background removal based on edge detection and color similarity
+                // This is a basic implementation - for better results, consider using a library
+                const threshold = 40; // Adjust this for sensitivity
+                
+                // First pass: identify background pixels (edges and corners)
+                const isBackground = new Array(data.length / 4).fill(false);
+                
+                // Check corners and edges
+                const checkPixel = (x, y) => {
+                    const idx = (y * canvas.width + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    
+                    // Calculate color difference from average corner color
+                    return {r, g, b, idx};
+                };
+                
+                // Sample corner pixels to determine background color
+                const corners = [
+                    checkPixel(0, 0),
+                    checkPixel(canvas.width - 1, 0),
+                    checkPixel(0, canvas.height - 1),
+                    checkPixel(canvas.width - 1, canvas.height - 1)
+                ];
+                
+                const avgR = corners.reduce((sum, c) => sum + c.r, 0) / 4;
+                const avgG = corners.reduce((sum, c) => sum + c.g, 0) / 4;
+                const avgB = corners.reduce((sum, c) => sum + c.b, 0) / 4;
+                
+                // Flood fill from corners
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    
+                    // Calculate color distance
+                    const dist = Math.sqrt(
+                        Math.pow(r - avgR, 2) +
+                        Math.pow(g - avgG, 2) +
+                        Math.pow(b - avgB, 2)
+                    );
+                    
+                    // If pixel is similar to background, replace with chosen color
+                    if (dist < threshold) {
+                        data[i] = bgR;
+                        data[i + 1] = bgG;
+                        data[i + 2] = bgB;
+                        data[i + 3] = 255; // Full opacity
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                resolve(canvas);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
 
     /* =====================================
        HELPERS
@@ -628,7 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    cropApply.addEventListener('click', () => {
+    cropApply.addEventListener('click', async () => {
         if (!cropper || currentCropIndex === null) {
             console.error('Cropper not initialized or no file selected');
             if (!cropper) {
@@ -653,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const targetHeight = Math.round((PHOTO_H / 2.54) * 300);
 
             // Get cropped canvas
-            const canvas = cropper.getCroppedCanvas({
+            let canvas = cropper.getCroppedCanvas({
                 width: targetWidth,
                 height: targetHeight,
                 imageSmoothingEnabled: true,
@@ -664,7 +741,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!canvas) {
                 console.error('Failed to get cropped canvas');
                 alert('Failed to crop image. Please try again.');
+                cropApply.disabled = false;
+                cropApply.textContent = 'Apply Crop';
                 return;
+            }
+
+            // Apply background removal if enabled
+            if (cropRemoveBg && cropRemoveBg.value === 'yes') {
+                cropApply.textContent = 'Removing background...';
+                const bgColor = cropBgColor ? cropBgColor.value : '#FFFFFF';
+                try {
+                    canvas = await removeBackground(canvas, bgColor);
+                } catch (error) {
+                    console.error('Background removal failed:', error);
+                    alert('Background removal failed. Continuing with crop only.');
+                }
             }
 
             // Convert canvas to blob
@@ -672,6 +763,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!blob) {
                     console.error('Failed to create blob from canvas');
                     alert('Failed to process cropped image. Please try again.');
+                    cropApply.disabled = false;
+                    cropApply.textContent = 'Apply Crop';
                     return;
                 }
 
@@ -698,6 +791,7 @@ document.addEventListener("DOMContentLoaded", () => {
             alert('An error occurred while applying the crop. Please try again.');
             cropApply.disabled = false;
             cropApply.textContent = 'Apply Crop';
+        }
         }
     });
 

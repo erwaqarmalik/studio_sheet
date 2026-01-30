@@ -126,6 +126,33 @@
                 <p><strong>Aspect Ratio:</strong> <span id="cropAspectRatio">3.5×4.5 cm (Passport Photo)</span></p>
                 <p class="crop-hint">Adjust the crop area to frame your photo correctly</p>
             </div>
+            <div class="bg-removal-section mt-3">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="bi bi-eraser me-2"></i>Remove Background
+                        </label>
+                        <select id="cropRemoveBg" class="form-select form-select-sm">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6" id="cropBgColorContainer" style="display: none;">
+                        <label class="form-label">
+                            <i class="bi bi-palette me-2"></i>Background Color
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <input type="color" id="cropBgColor" class="form-control form-control-color" value="#FFFFFF">
+                            <select id="cropBgColorPreset" class="form-select">
+                                <option value="#FFFFFF" selected>White</option>
+                                <option value="#E8F4F8">Light Blue</option>
+                                <option value="#F0F0F0">Light Gray</option>
+                                <option value="#FFF5E6">Cream</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="crop-modal-footer">
             <button type="button" class="crop-btn crop-btn-cancel" id="cropCancel">Cancel</button>
@@ -206,31 +233,6 @@
       <option value="PDF">PDF</option>
       <option value="JPEG">JPEG</option>
     </select>
-  </div>
-
-  <div class="col-md-4">
-    <label class="form-label">
-        <i class="bi bi-eraser me-2"></i>Remove Background
-    </label>
-    <select name="remove_bg" id="removeBg" class="form-select">
-      <option value="no">No</option>
-      <option value="yes">Yes</option>
-    </select>
-  </div>
-
-  <div class="col-md-4" id="bgColorContainer" style="display: none;">
-    <label class="form-label">
-        <i class="bi bi-palette me-2"></i>Background Color
-    </label>
-    <div class="input-group">
-      <input type="color" name="bg_color" id="bgColor" class="form-control form-control-color" value="#FFFFFF">
-      <select id="bgColorPreset" class="form-select">
-        <option value="#FFFFFF" selected>White</option>
-        <option value="#E8F4F8">Light Blue</option>
-        <option value="#F0F0F0">Light Gray</option>
-        <option value="#FFF5E6">Cream</option>
-      </select>
-    </div>
   </div>
 
   <div class="col-md-6">
