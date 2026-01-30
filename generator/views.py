@@ -16,6 +16,7 @@ from .utils import (
     generate_jpeg,
     zip_files,
     crop_to_passport_aspect_ratio,
+    remove_background,
     PAPER_SIZES,
 )
 from .config import PASSPORT_CONFIG, PHOTO_SIZES
@@ -118,6 +119,18 @@ def index(request: HttpRequest) -> HttpResponse:
                 crop_to_passport_aspect_ratio(file_path, photo_width_cm, photo_height_cm)
                 
                 saved_photos.append(file_path)
+            
+            # ==================================================
+            # BACKGROUND REMOVAL (if enabled)
+            # ==================================================
+            remove_bg = request.POST.get("remove_bg", "no") == "yes"
+            bg_color = request.POST.get("bg_color", PASSPORT_CONFIG["default_bg_color"])
+            
+            if remove_bg:
+                for photo_path in saved_photos:
+                    success = remove_background(photo_path, bg_color)
+                    if not success:
+                        logger.warning(f"Failed to remove background from {os.path.basename(photo_path)}")
 
             # ==================================================
             # 2. COPIES PER PHOTO

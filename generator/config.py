@@ -34,4 +34,8 @@ PASSPORT_CONFIG = {
 
     # Default copies per photo
     "default_copies": 6,
+    
+    # Background removal
+    "default_remove_bg": False,
+    "default_bg_color": "#FFFFFF",
 }

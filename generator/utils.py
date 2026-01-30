@@ -1,7 +1,8 @@
 import os
+import io
 import logging
 from datetime import datetime
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from PIL import Image, ImageDraw
@@ -189,6 +190,62 @@ def crop_to_passport_aspect_ratio(image_path: str, width_cm: float = None, heigh
         
     except Exception as e:
         # Log error but don't raise - let caller handle
+        return False
+
+
+def remove_background(image_path: str, bg_color: str = "#FFFFFF") -> bool:
+    """
+    Remove background from an image and replace with solid color.
+    
+    Args:
+        image_path: Path to the image file
+        bg_color: Hex color code for background (default: white)
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        from rembg import remove
+        
+        # Open original image
+        with open(image_path, 'rb') as f:
+            input_data = f.read()
+        
+        # Remove background
+        output_data = remove(input_data)
+        
+        # Open as PIL Image
+        img = Image.open(io.BytesIO(output_data)).convert("RGBA")
+        
+        # Convert hex color to RGB
+        bg_rgb = tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+        
+        # Create new image with solid background
+        background = Image.new("RGB", img.size, bg_rgb)
+        
+        # Paste the image with transparency
+        background.paste(img, (0, 0), img)
+        
+        # Save the result
+        ext = os.path.splitext(image_path)[1].lower()
+        if ext in ['.jpg', '.jpeg']:
+            background.save(image_path, "JPEG", quality=JPEG_QUALITY, subsampling=0)
+        elif ext == '.png':
+            background.save(image_path, "PNG")
+        else:
+            background.save(image_path, "JPEG", quality=JPEG_QUALITY, subsampling=0)
+        
+        background.close()
+        img.close()
+        
+        logger.info(f"Background removed from {os.path.basename(image_path)}")
+        return True
+        
+    except ImportError:
+        logger.error("rembg library not installed. Run: pip install rembg")
+        return False
+    except Exception as e:
+        logger.error(f"Error removing background: {e}", exc_info=True)
         return False
 
 

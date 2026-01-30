@@ -208,6 +208,31 @@
     </select>
   </div>
 
+  <div class="col-md-4">
+    <label class="form-label">
+        <i class="bi bi-eraser me-2"></i>Remove Background
+    </label>
+    <select name="remove_bg" id="removeBg" class="form-select">
+      <option value="no">No</option>
+      <option value="yes">Yes</option>
+    </select>
+  </div>
+
+  <div class="col-md-4" id="bgColorContainer" style="display: none;">
+    <label class="form-label">
+        <i class="bi bi-palette me-2"></i>Background Color
+    </label>
+    <div class="input-group">
+      <input type="color" name="bg_color" id="bgColor" class="form-control form-control-color" value="#FFFFFF">
+      <select id="bgColorPreset" class="form-select">
+        <option value="#FFFFFF" selected>White</option>
+        <option value="#E8F4F8">Light Blue</option>
+        <option value="#F0F0F0">Light Gray</option>
+        <option value="#FFF5E6">Cream</option>
+      </select>
+    </div>
+  </div>
+
   <div class="col-md-6">
     <label class="form-label">
         <i class="bi bi-image me-2"></i>Photo Size

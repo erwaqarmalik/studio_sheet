@@ -67,6 +67,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const customWidthInput = document.getElementById("customWidth");
     const customHeightInput = document.getElementById("customHeight");
     const uploadSizeHint = document.getElementById("uploadSizeHint");
+    
+    const removeBg = document.getElementById("removeBg");
+    const bgColorContainer = document.getElementById("bgColorContainer");
+    const bgColor = document.getElementById("bgColor");
+    const bgColorPreset = document.getElementById("bgColorPreset");
 
     // Debug: Check if elements exist
     if (!defaultPhotoSize) console.warn("defaultPhotoSize not found");
@@ -208,6 +213,24 @@ document.addEventListener("DOMContentLoaded", () => {
     defaultPhotoSize.addEventListener('change', updatePhotoSize);
     customWidthInput.addEventListener('input', updatePhotoSize);
     customHeightInput.addEventListener('input', updatePhotoSize);
+    
+    // Background removal toggle
+    if (removeBg && bgColorContainer) {
+        removeBg.addEventListener('change', function() {
+            if (this.value === 'yes') {
+                bgColorContainer.style.display = 'block';
+            } else {
+                bgColorContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    // Background color preset selector
+    if (bgColorPreset && bgColor) {
+        bgColorPreset.addEventListener('change', function() {
+            bgColor.value = this.value;
+        });
+    }
 
     console.log("Event listeners attached for photo size changes");
     console.log("defaultPhotoSize:", defaultPhotoSize);
