@@ -262,11 +262,25 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Background removal failed');
+                let errorMsg = 'Background removal failed';
+                try {
+                    const error = await response.json();
+                    errorMsg = error.error || errorMsg;
+                } catch (e) {
+                    // Response wasn't JSON, use status text
+                    if (response.status === 503) {
+                        errorMsg = 'Background removal service is unavailable. Please try again in a moment.';
+                    } else if (response.status === 502 || response.status === 504) {
+                        errorMsg = 'Server error. Please try again later.';
+                    }
+                }
+                throw new Error(errorMsg);
             }
             
             const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Background removal failed');
+            }
             return result.image;
         } catch (error) {
             console.error('API error:', error);
