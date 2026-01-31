@@ -52,6 +52,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const submitLoader = document.getElementById("submitLoader");
     const uploadZone = document.getElementById("uploadZone");
 
+    // Debug: Check if critical elements exist
+    console.log('Critical elements check:');
+    console.log('input:', !!input);
+    console.log('preview:', !!preview);
+    console.log('uploadZone:', !!uploadZone);
+    
+    if (!input || !preview || !uploadZone) {
+        console.error('Missing critical elements!');
+        if (!input) console.error('photoInput not found');
+        if (!preview) console.error('preview not found');
+        if (!uploadZone) console.error('uploadZone not found');
+        return;
+    }
+
     const paperSize = document.getElementById("paperSize");
     const orientation = document.getElementById("orientation");
     const margin = document.getElementById("margin");
@@ -67,12 +81,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const customWidthInput = document.getElementById("customWidth");
     const customHeightInput = document.getElementById("customHeight");
     const uploadSizeHint = document.getElementById("uploadSizeHint");
-    
-    // Crop modal background removal elements
-    const cropRemoveBg = document.getElementById("cropRemoveBg");
-    const cropBgColorContainer = document.getElementById("cropBgColorContainer");
-    const cropBgColor = document.getElementById("cropBgColor");
-    const cropBgColorPreset = document.getElementById("cropBgColorPreset");
 
     // Debug: Check if elements exist
     if (!defaultPhotoSize) console.warn("defaultPhotoSize not found");
@@ -90,9 +98,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const cropCancel = document.getElementById("cropCancel");
     const cropApply = document.getElementById("cropApply");
     const cropAspectRatio = document.getElementById("cropAspectRatio");
+    
+    // Background removal modal elements
+    const bgRemovalModal = document.getElementById("bgRemovalModal");
+    const bgRemovalImage = document.getElementById("bgRemovalImage");
+    const bgRemovalModalClose = document.getElementById("bgRemovalModalClose");
+    const bgRemovalCancel = document.getElementById("bgRemovalCancel");
+    const bgRemovalApply = document.getElementById("bgRemovalApply");
+    const bgRemovalColorPicker = document.getElementById("bgRemovalColorPicker");
+    const bgRemovalColorPreset = document.getElementById("bgRemovalColorPreset");
+    const bgColorPreview = document.getElementById("bgColorPreview");
+    
     let cropper = null;
     let currentCropIndex = null;
     let currentCropModalUrl = null; // Store object URL for modal cleanup
+    let currentBgRemovalIndex = null; // Track which file is being processed for BG removal
+    let currentBgRemovalDataUrl = null; // Store image data URL for BG removal
 
     /* =====================================
        FILE MANAGEMENT
@@ -101,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let fileList = [];
     let fileDataMap = new Map(); // Map to store file data URLs
     let croppedFilesMap = new Map(); // Map to store cropped File objects (index -> File)
+    let bgRemovedFilesMap = new Map(); // Map to store background-removed File objects (index -> File)
     let bgRemovedMap = new Map(); // Map to track which images have background removed (index -> true/false)
     let objectUrlMap = new Map(); // Map to store object URLs for cleanup (index -> objectURL)
 
@@ -215,24 +237,6 @@ document.addEventListener("DOMContentLoaded", () => {
     defaultPhotoSize.addEventListener('change', updatePhotoSize);
     customWidthInput.addEventListener('input', updatePhotoSize);
     customHeightInput.addEventListener('input', updatePhotoSize);
-    
-    // Crop modal background removal toggle
-    if (cropRemoveBg && cropBgColorContainer) {
-        cropRemoveBg.addEventListener('change', function() {
-            if (this.value === 'yes') {
-                cropBgColorContainer.style.display = 'block';
-            } else {
-                cropBgColorContainer.style.display = 'none';
-            }
-        });
-    }
-    
-    // Crop modal background color preset selector
-    if (cropBgColorPreset && cropBgColor) {
-        cropBgColorPreset.addEventListener('change', function() {
-            cropBgColor.value = this.value;
-        });
-    }
 
     console.log("Event listeners attached for photo size changes");
     console.log("defaultPhotoSize:", defaultPhotoSize);
@@ -246,77 +250,28 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =====================================
        BACKGROUND REMOVAL
     ===================================== */
-    function removeBackground(canvas, bgColor) {
-        return new Promise((resolve, reject) => {
-            try {
-                const ctx = canvas.getContext('2d');
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-                
-                // Convert hex to RGB
-                const hexColor = bgColor.replace('#', '');
-                const bgR = parseInt(hexColor.substr(0, 2), 16);
-                const bgG = parseInt(hexColor.substr(2, 2), 16);
-                const bgB = parseInt(hexColor.substr(4, 2), 16);
-                
-                // Simple background removal based on edge detection and color similarity
-                // This is a basic implementation - for better results, consider using a library
-                const threshold = 40; // Adjust this for sensitivity
-                
-                // First pass: identify background pixels (edges and corners)
-                const isBackground = new Array(data.length / 4).fill(false);
-                
-                // Check corners and edges
-                const checkPixel = (x, y) => {
-                    const idx = (y * canvas.width + x) * 4;
-                    const r = data[idx];
-                    const g = data[idx + 1];
-                    const b = data[idx + 2];
-                    
-                    // Calculate color difference from average corner color
-                    return {r, g, b, idx};
-                };
-                
-                // Sample corner pixels to determine background color
-                const corners = [
-                    checkPixel(0, 0),
-                    checkPixel(canvas.width - 1, 0),
-                    checkPixel(0, canvas.height - 1),
-                    checkPixel(canvas.width - 1, canvas.height - 1)
-                ];
-                
-                const avgR = corners.reduce((sum, c) => sum + c.r, 0) / 4;
-                const avgG = corners.reduce((sum, c) => sum + c.g, 0) / 4;
-                const avgB = corners.reduce((sum, c) => sum + c.b, 0) / 4;
-                
-                // Flood fill from corners
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-                    
-                    // Calculate color distance
-                    const dist = Math.sqrt(
-                        Math.pow(r - avgR, 2) +
-                        Math.pow(g - avgG, 2) +
-                        Math.pow(b - avgB, 2)
-                    );
-                    
-                    // If pixel is similar to background, replace with chosen color
-                    if (dist < threshold) {
-                        data[i] = bgR;
-                        data[i + 1] = bgG;
-                        data[i + 2] = bgB;
-                        data[i + 3] = 255; // Full opacity
-                    }
-                }
-                
-                ctx.putImageData(imageData, 0, 0);
-                resolve(canvas);
-            } catch (error) {
-                reject(error);
+    async function removeBackgroundAPI(imageDataUrl, bgColor) {
+        try {
+            const formData = new FormData();
+            formData.append('image', imageDataUrl);
+            formData.append('bg_color', bgColor);
+            
+            const response = await fetch('/api/remove-background/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Background removal failed');
             }
-        });
+            
+            const result = await response.json();
+            return result.image;
+        } catch (error) {
+            console.error('API error:', error);
+            throw error;
+        }
     }
 
     /* =====================================
@@ -339,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
        FILE MANAGEMENT FUNCTIONS
     ===================================== */
     function addFiles(newFiles) {
+        console.log('addFiles called with:', newFiles.length, 'files');
         newFiles.forEach(file => {
             // Check file size
             const maxSize = 10 * 1024 * 1024; // 10MB
@@ -350,17 +306,24 @@ document.addEventListener("DOMContentLoaded", () => {
             // Check if file already exists (by name and size)
             const exists = fileList.some(f => f.name === file.name && f.size === file.size);
             if (exists) {
+                console.log('File already exists, skipping:', file.name);
                 return; // Skip duplicate files
             }
 
             fileList.push(file);
+            console.log('File added to list:', file.name, 'Total files:', fileList.length);
 
             // Read file and store data URL
             const reader = new FileReader();
             reader.onload = e => {
+                console.log('File loaded:', file.name);
                 fileDataMap.set(file.name + file.size, e.target.result);
+                console.log('Calling renderPreview, fileDataMap size:', fileDataMap.size);
                 renderPreview();
                 updateFileInput();
+            };
+            reader.onerror = err => {
+                console.error('Error reading file:', file.name, err);
             };
             reader.readAsDataURL(file);
         });
@@ -388,22 +351,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderPreview() {
+        console.log('renderPreview called, fileList length:', fileList.length);
+        console.log('preview element:', preview);
+        
         // Clean up previous object URLs
         objectUrlMap.forEach(url => URL.revokeObjectURL(url));
         objectUrlMap.clear();
         
         preview.innerHTML = "";
         fileList.forEach((file, index) => {
-            // Use cropped image data URL if available, otherwise use original
+            console.log(`Processing file ${index}:`, file.name);
+            // Use cropped image first, then background-removed, then original
             let dataUrl;
             if (croppedFilesMap.has(index)) {
                 const objectUrl = URL.createObjectURL(croppedFilesMap.get(index));
                 objectUrlMap.set(index, objectUrl);
                 dataUrl = objectUrl;
+                console.log('Using cropped image for:', file.name);
+            } else if (bgRemovedFilesMap.has(index)) {
+                const objectUrl = URL.createObjectURL(bgRemovedFilesMap.get(index));
+                objectUrlMap.set(index, objectUrl);
+                dataUrl = objectUrl;
+                console.log('Using background-removed image for:', file.name);
             } else {
                 dataUrl = fileDataMap.get(file.name + file.size);
+                console.log('Using original image for:', file.name, 'dataUrl exists:', !!dataUrl);
             }
-            if (!dataUrl) return; // Skip if data URL not ready yet
+            if (!dataUrl) {
+                console.warn('No dataUrl for file:', file.name, 'skipping');
+                return; // Skip if data URL not ready yet
+            }
 
             const card = document.createElement("div");
             card.className = "preview-card";
@@ -417,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </svg>
                 </button>
                 ${isCropped ? '<span class="crop-badge">✓ Cropped</span>' : ''}
-                ${isBgRemoved ? '<span class="crop-badge" style="background: #28a745; top: 30px;">✓ BG Removed</span>' : ''}
+                ${isBgRemoved ? '<span class="crop-badge bg-removed-badge">✓ BG Removed</span>' : ''}
                 <img src="${dataUrl}" alt="${file.name}">
                 <div class="preview-actions">
                     <button type="button" class="crop-btn" data-index="${index}" aria-label="Crop photo">
@@ -473,20 +450,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 openBgRemovalModal(index);
             });
         });
-                openCropModal(index);
-            });
-        });
     }
 
     /* =====================================
        FILE INPUT CHANGE HANDLER
     ===================================== */
     input.addEventListener("change", (e) => {
+        console.log('Input change event fired');
+        console.log('Files selected:', e.target.files ? e.target.files.length : 0);
         // Prevent double-triggering by checking if files are already being processed
         if (e.target.files && e.target.files.length > 0) {
+            console.log('Processing files from input');
             addFiles(Array.from(e.target.files));
             // Reset input value to allow selecting the same file again if needed
             e.target.value = '';
+        } else {
+            console.warn('No files in input.files');
         }
     });
 
@@ -552,10 +531,13 @@ document.addEventListener("DOMContentLoaded", () => {
             cropper = null;
         }
 
-        // Use cropped image if available, otherwise use original
+        // Use cropped image first, then background-removed, then original
         let imageUrl;
         if (croppedFilesMap.has(fileIndex)) {
             currentCropModalUrl = URL.createObjectURL(croppedFilesMap.get(fileIndex));
+            imageUrl = currentCropModalUrl;
+        } else if (bgRemovedFilesMap.has(fileIndex)) {
+            currentCropModalUrl = URL.createObjectURL(bgRemovedFilesMap.get(fileIndex));
             imageUrl = currentCropModalUrl;
         } else {
             imageUrl = originalDataUrl;
@@ -771,18 +753,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Apply background removal if enabled
-            if (cropRemoveBg && cropRemoveBg.value === 'yes') {
-                cropApply.textContent = 'Removing background...';
-                const bgColor = cropBgColor ? cropBgColor.value : '#FFFFFF';
-                try {
-                    canvas = await removeBackground(canvas, bgColor);
-                } catch (error) {
-                    console.error('Background removal failed:', error);
-                    alert('Background removal failed. Continuing with crop only.');
-                }
-            }
-
             // Convert canvas to blob
             canvas.toBlob((blob) => {
                 if (!blob) {
@@ -817,87 +787,119 @@ document.addEventListener("DOMContentLoaded", () => {
             cropApply.disabled = false;
             cropApply.textContent = 'Apply Crop';
         }
-        }
     });
 
     /* =====================================
        BACKGROUND REMOVAL MODAL
     ===================================== */
-    async function openBgRemovalModal(fileIndex) {
+    function openBgRemovalModal(fileIndex) {
         const file = fileList[fileIndex];
         if (!file) return;
 
-        // Get current file (cropped or original)
+        // Use cropped file if available, otherwise use original
         let sourceFile = croppedFilesMap.has(fileIndex) ? croppedFilesMap.get(fileIndex) : file;
         
-        // Ask user for background color
-        const bgColor = prompt('Enter background color (hex code):', '#FFFFFF') || '#FFFFFF';
+        currentBgRemovalIndex = fileIndex;
         
-        if (!confirm(`Remove background and replace with ${bgColor}?`)) {
+        // Read file and display in modal
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentBgRemovalDataUrl = e.target.result;
+            bgRemovalImage.src = currentBgRemovalDataUrl;
+            bgRemovalColorPicker.value = '#FFFFFF';
+            bgColorPreview.style.backgroundColor = '#FFFFFF';
+            bgRemovalModal.classList.add('active');
+        };
+        reader.onerror = () => {
+            alert('Failed to read image file');
+        };
+        reader.readAsDataURL(sourceFile);
+    }
+    
+    function closeBgRemovalModal() {
+        bgRemovalModal.classList.remove('active');
+        currentBgRemovalIndex = null;
+        currentBgRemovalDataUrl = null;
+    }
+    
+    // Background removal modal event listeners
+    bgRemovalModalClose.addEventListener('click', closeBgRemovalModal);
+    bgRemovalCancel.addEventListener('click', closeBgRemovalModal);
+    
+    bgRemovalModal.addEventListener('click', (e) => {
+        if (e.target === bgRemovalModal) {
+            closeBgRemovalModal();
+        }
+    });
+    
+    bgRemovalColorPreset.addEventListener('change', function() {
+        bgRemovalColorPicker.value = this.value;
+        bgColorPreview.style.backgroundColor = this.value;
+    });
+    
+    bgRemovalColorPicker.addEventListener('input', function() {
+        bgColorPreview.style.backgroundColor = this.value;
+    });
+    
+    bgColorPreview.addEventListener('click', function() {
+        bgRemovalColorPicker.click();
+    });
+    
+    bgRemovalApply.addEventListener('click', async () => {
+        if (currentBgRemovalIndex === null || !currentBgRemovalDataUrl) {
+            alert('No image selected');
             return;
         }
-
-        // Show processing indicator
-        const card = preview.querySelector(`[data-index="${fileIndex}"]`)?.closest('.preview-card');
-        if (card) {
-            const img = card.querySelector('img');
-            img.style.opacity = '0.5';
-            img.style.filter = 'blur(2px)';
-        }
-
+        
+        bgRemovalApply.disabled = true;
+        bgRemovalApply.textContent = 'Processing...';
+        
         try {
-            // Create image from file
-            const img = new Image();
-            const objectUrl = URL.createObjectURL(sourceFile);
+            const bgColor = bgRemovalColorPicker.value;
+            console.log('Calling background removal API with color:', bgColor);
             
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = objectUrl;
-            });
+            // Call API for AI-powered background removal
+            const processedDataUrl = await removeBackgroundAPI(currentBgRemovalDataUrl, bgColor);
+            console.log('Background removal complete');
 
-            // Create canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-
-            // Apply background removal
-            await removeBackground(canvas, bgColor);
-
-            // Convert to blob
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+            // Convert data URL to blob
+            const response = await fetch(processedDataUrl);
+            const blob = await response.blob();
             
             // Create new file
+            const file = fileList[currentBgRemovalIndex];
             const processedFile = new File([blob], file.name, {
                 type: 'image/jpeg',
                 lastModified: Date.now()
             });
 
             // Store processed file
-            croppedFilesMap.set(fileIndex, processedFile);
-            bgRemovedMap.set(fileIndex, true);
-
-            // Cleanup
-            URL.revokeObjectURL(objectUrl);
+            // If photo was cropped, store in croppedFilesMap to preserve both edits
+            // Otherwise, store in bgRemovedFilesMap
+            if (croppedFilesMap.has(currentBgRemovalIndex)) {
+                // Photo was already cropped, update the cropped version with BG removed
+                croppedFilesMap.set(currentBgRemovalIndex, processedFile);
+            } else {
+                // No crop applied yet, store in background removal map
+                bgRemovedFilesMap.set(currentBgRemovalIndex, processedFile);
+            }
+            bgRemovedMap.set(currentBgRemovalIndex, true);
 
             // Update preview
             renderPreview();
             updateFileInput();
+            
+            // Close modal
+            closeBgRemovalModal();
 
         } catch (error) {
             console.error('Background removal failed:', error);
-            alert('Failed to remove background. Please try again.');
-            
-            // Restore card appearance
-            if (card) {
-                const img = card.querySelector('img');
-                img.style.opacity = '1';
-                img.style.filter = 'none';
-            }
+            alert(`Failed to remove background: ${error.message || 'Please try again.'}`);
+        } finally {
+            bgRemovalApply.disabled = false;
+            bgRemovalApply.textContent = 'Remove Background';
         }
-    }
+    });
 
     /* =====================================
        UPDATE FILE INPUT WITH CROPPED FILES
@@ -906,10 +908,15 @@ document.addEventListener("DOMContentLoaded", () => {
         // Create a new DataTransfer object to update the file input
         const dataTransfer = new DataTransfer();
         fileList.forEach((file, index) => {
-            // Use cropped file if available, otherwise use original
-            const fileToAdd = croppedFilesMap.has(index) 
-                ? croppedFilesMap.get(index)
-                : file;
+            // Priority: cropped file > background removed file > original
+            let fileToAdd;
+            if (croppedFilesMap.has(index)) {
+                fileToAdd = croppedFilesMap.get(index);
+            } else if (bgRemovedFilesMap.has(index)) {
+                fileToAdd = bgRemovedFilesMap.get(index);
+            } else {
+                fileToAdd = file;
+            }
             dataTransfer.items.add(fileToAdd);
         });
         input.files = dataTransfer.files;

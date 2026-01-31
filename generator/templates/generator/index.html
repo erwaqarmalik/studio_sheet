@@ -126,37 +126,58 @@
                 <p><strong>Aspect Ratio:</strong> <span id="cropAspectRatio">3.5×4.5 cm (Passport Photo)</span></p>
                 <p class="crop-hint">Adjust the crop area to frame your photo correctly</p>
             </div>
-            <div class="bg-removal-section mt-3">
-                <div class="row g-2">
-                    <div class="col-md-6">
-                        <label class="form-label">
-                            <i class="bi bi-eraser me-2"></i>Remove Background
-                        </label>
-                        <select id="cropRemoveBg" class="form-select form-select-sm">
-                            <option value="no">No</option>
-                            <option value="yes">Yes</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6" id="cropBgColorContainer" style="display: none;">
-                        <label class="form-label">
-                            <i class="bi bi-palette me-2"></i>Background Color
-                        </label>
-                        <div class="input-group input-group-sm">
-                            <input type="color" id="cropBgColor" class="form-control form-control-color" value="#FFFFFF">
-                            <select id="cropBgColorPreset" class="form-select">
-                                <option value="#FFFFFF" selected>White</option>
-                                <option value="#E8F4F8">Light Blue</option>
-                                <option value="#F0F0F0">Light Gray</option>
-                                <option value="#FFF5E6">Cream</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         <div class="crop-modal-footer">
             <button type="button" class="crop-btn crop-btn-cancel" id="cropCancel">Cancel</button>
             <button type="button" class="crop-btn crop-btn-primary" id="cropApply">Apply Crop</button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     BACKGROUND REMOVAL MODAL
+========================= -->
+<div id="bgRemovalModal" class="crop-modal">
+    <div class="crop-modal-content">
+        <div class="crop-modal-header">
+            <h3>Remove Background</h3>
+            <button type="button" class="crop-modal-close" id="bgRemovalModalClose" aria-label="Close">
+                <i class="bi bi-x-lg" style="font-size: 24px;"></i>
+            </button>
+        </div>
+        <div class="crop-modal-body">
+            <div class="crop-container">
+                <img id="bgRemovalImage" src="" alt="Background removal preview">
+            </div>
+            <div class="crop-info">
+                <p><strong>Select Background Color:</strong></p>
+                <div class="color-selector-group mb-3">
+                    <div class="color-preview-container">
+                        <div class="color-preview-box" id="bgColorPreview" style="background-color: #FFFFFF;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+                                <path d="M12 6v6l4.3 2.6"></path>
+                                <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="color-input-container">
+                        <input type="color" id="bgRemovalColorPicker" class="form-control form-control-color" value="#FFFFFF" title="Click to select color">
+                        <select id="bgRemovalColorPreset" class="form-select">
+                            <option value="#FFFFFF" selected>White</option>
+                            <option value="#E8F4F8">Light Blue</option>
+                            <option value="#F0F0F0">Light Gray</option>
+                            <option value="#FFF5E6">Cream</option>
+                            <option value="#000000">Black</option>
+                        </select>
+                    </div>
+                </div>
+                <small class="text-muted">Choose a color or use the color picker</small>
+            </div>
+        </div>
+        <div class="crop-modal-footer">
+            <button type="button" class="crop-btn crop-btn-cancel" id="bgRemovalCancel">Cancel</button>
+            <button type="button" class="crop-btn crop-btn-primary" id="bgRemovalApply">Remove Background</button>
         </div>
     </div>
 </div>
