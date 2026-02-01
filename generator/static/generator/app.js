@@ -276,14 +276,41 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             const result = await response.json();
-            if (!result.success) {
+            if (!result.success && !result.task_id) {
                 throw new Error(result.error || 'Background removal failed');
             }
+
+            if (result.task_id) {
+                return await waitForBackgroundTask(result.task_id);
+            }
+
             return result.image;
         } catch (error) {
             console.error('API error:', error);
             throw error;
         }
+    }
+
+    async function waitForBackgroundTask(taskId) {
+        const maxAttempts = 60;
+        const delayMs = 2000;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const res = await fetch(`/api/remove-background/status/${taskId}/`);
+            const data = await res.json();
+
+            if (data.status === 'completed' && data.image) {
+                return data.image;
+            }
+
+            if (data.status === 'failed') {
+                throw new Error(data.error || 'Background removal failed');
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+
+        throw new Error('Background removal timed out. Please try again.');
     }
 
     /* =====================================

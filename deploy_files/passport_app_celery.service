@@ -1,0 +1,22 @@
+[Unit]
+Description=Celery Worker for Passport App
+After=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+WorkingDirectory=/root/studio_sheet
+Environment="PATH=/root/studio_sheet/venv/bin"
+EnvironmentFile=/root/studio_sheet/.env
+ExecStart=/root/studio_sheet/venv/bin/celery -A passport_app worker \
+    --loglevel=info \
+    --logfile=/root/studio_sheet/logs/celery.log \
+    --pidfile=/root/studio_sheet/logs/celery.pid \
+    --concurrency=2
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

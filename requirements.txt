@@ -11,4 +11,9 @@ onnxruntime>=1.16.0
 # Database
 psycopg2-binary>=2.9.9
 
+# Caching / Queue
+celery>=5.3.6
+redis>=5.0.1
+django-redis>=5.4.0
+
 # Production Server

@@ -4,10 +4,17 @@ API views for background removal and other image processing.
 import io
 import base64
 import logging
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from PIL import Image
+try:
+    from celery.result import AsyncResult
+except Exception:
+    AsyncResult = None
+
+from .tasks import remove_background_task
 
 logger = logging.getLogger('generator')
 
@@ -29,7 +36,7 @@ def remove_background_api(request):
     Accepts base64 encoded image and background color, returns processed image.
     """
     # Check if rembg is available
-    if not REMBG_AVAILABLE:
+    if not REMBG_AVAILABLE and not settings.CELERY_ENABLED:
         logger.error("Background removal requested but rembg is not installed")
         return JsonResponse({
             'error': 'Background removal service is not available. Please contact support.',
@@ -59,7 +66,16 @@ def remove_background_api(request):
             logger.error(f"Failed to decode base64 image: {e}")
             return JsonResponse({'error': 'Invalid image format'}, status=400)
         
-        # Process image with rembg
+        # If Celery enabled, enqueue task
+        if settings.CELERY_ENABLED and AsyncResult is not None:
+            task = remove_background_task.delay(image_data, bg_color)
+            return JsonResponse({
+                'success': True,
+                'task_id': task.id,
+                'status': 'processing'
+            })
+
+        # Process image with rembg (sync fallback)
         try:
             logger.info(f"Processing image, size: {len(image_bytes)} bytes")
             output_bytes = remove(image_bytes)
@@ -126,3 +142,22 @@ def remove_background_api(request):
             'error': 'An unexpected error occurred. Please try again.',
             'success': False
         }, status=500)
+
+
+@require_http_methods(["GET"])
+def remove_background_status(request, task_id):
+    """Check status of background removal task."""
+    if AsyncResult is None:
+        return JsonResponse({'success': False, 'status': 'failed', 'error': 'Background tasks are not available'})
+    result = AsyncResult(task_id)
+    if not result.ready():
+        return JsonResponse({'success': False, 'status': 'processing'})
+
+    try:
+        data = result.get(timeout=1)
+        if data.get('success'):
+            return JsonResponse({'success': True, 'status': 'completed', 'image': data.get('image')})
+        return JsonResponse({'success': False, 'status': 'failed', 'error': data.get('error', 'Failed to process image')})
+    except Exception as e:
+        logger.error(f"Failed to fetch task result: {e}")
+        return JsonResponse({'success': False, 'status': 'failed', 'error': 'Failed to fetch task result'})

@@ -11,6 +11,7 @@ from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.decorators import login_required
 
 from .models import PhotoGeneration
+from .tasks import generate_photosheet_task
 from .utils import (
     generate_pdf,
     generate_jpeg,
@@ -43,6 +44,7 @@ def index(request: HttpRequest) -> HttpResponse:
     """
     output_url: Optional[str] = None
     error: Optional[str] = None
+    processing_message: Optional[str] = None
 
     if request.method == "POST":
         try:
@@ -125,12 +127,6 @@ def index(request: HttpRequest) -> HttpResponse:
             # ==================================================
             remove_bg = request.POST.get("remove_bg", "no") == "yes"
             bg_color = request.POST.get("bg_color", PASSPORT_CONFIG["default_bg_color"])
-            
-            if remove_bg:
-                for photo_path in saved_photos:
-                    success = remove_background(photo_path, bg_color)
-                    if not success:
-                        logger.warning(f"Failed to remove background from {os.path.basename(photo_path)}")
 
             # ==================================================
             # 2. COPIES PER PHOTO
@@ -199,82 +195,109 @@ def index(request: HttpRequest) -> HttpResponse:
             )
 
             # ==================================================
-            # 4. GENERATE OUTPUT
+            # 4. GENERATE OUTPUT (async if enabled)
             # ==================================================
-            if output_type == "PDF":
-                output_path = generate_pdf(
-                    photos=saved_photos,
-                    copies_map=copies_map,
-                    paper_size=paper_size,
-                    orientation=orientation,
-                    margin_cm=margin_cm,
-                    col_gap_cm=col_gap_cm,
-                    row_gap_cm=row_gap_cm,
-                    cut_lines=cut_lines,
-                    output_dir=output_dir,
-                    photo_width_cm=photo_width_cm,
-                    photo_height_cm=photo_height_cm,
-                )
-
-            else:  # JPEG
-                jpeg_files = generate_jpeg(
-                    photos=saved_photos,
-                    copies_map=copies_map,
-                    paper_size=paper_size,
-                    orientation=orientation,
-                    margin_cm=margin_cm,
-                    col_gap_cm=col_gap_cm,
-                    row_gap_cm=row_gap_cm,
-                    cut_lines=cut_lines,
-                    output_dir=output_dir,
-                    photo_width_cm=photo_width_cm,
-                    photo_height_cm=photo_height_cm,
-                )
-
-                # 👉 SINGLE JPG if one page, ZIP if multiple pages
-                if len(jpeg_files) == 1:
-                    output_path = jpeg_files[0]
-                else:
-                    output_path = zip_files(jpeg_files, output_dir)
-
-            # ==================================================
-            # 5. PUBLIC DOWNLOAD URL
-            # ==================================================
-            output_url = (
-                settings.MEDIA_URL
-                + f"outputs/{session_id}/"
-                + os.path.basename(output_path)
-            )
-
-            logger.info(f"Successfully generated {output_type} for session {session_id}")
-            
-            # ==================================================
-            # 6. SAVE GENERATION HISTORY (if user is authenticated)
-            # ==================================================
-            try:
-                # Calculate file size
-                file_size = os.path.getsize(output_path) if os.path.exists(output_path) else None
-                
-                # Calculate total copies
+            celery_available = settings.CELERY_ENABLED and hasattr(generate_photosheet_task, 'delay')
+            if celery_available:
                 total_copies = sum(copies_map.values())
-                
-                # Save to database
-                PhotoGeneration.objects.create(
+                generation = PhotoGeneration.objects.create(
                     user=request.user if request.user.is_authenticated else None,
                     session_id=session_id,
                     num_photos=len(saved_photos),
                     paper_size=paper_size,
                     orientation=orientation,
                     output_type=output_type,
-                    output_path=output_path,
-                    output_url=output_url,
-                    file_size_bytes=file_size,
+                    output_path='',
+                    output_url='',
+                    file_size_bytes=None,
                     total_copies=total_copies,
+                    status='processing',
                 )
-                logger.info(f"Saved generation history for session {session_id}")
-            except Exception as e:
-                # Don't fail the whole request if history save fails
-                logger.error(f"Failed to save generation history: {e}", exc_info=True)
+
+                task = generate_photosheet_task.delay(
+                    session_id=session_id,
+                    user_id=request.user.id if request.user.is_authenticated else None,
+                    saved_photos=saved_photos,
+                    copies_map=copies_map,
+                    paper_size=paper_size,
+                    orientation=orientation,
+                    margin_cm=margin_cm,
+                    col_gap_cm=col_gap_cm,
+                    row_gap_cm=row_gap_cm,
+                    cut_lines=cut_lines,
+                    output_type=output_type,
+                    photo_width_cm=photo_width_cm,
+                    photo_height_cm=photo_height_cm,
+                    remove_bg=remove_bg,
+                    bg_color=bg_color,
+                )
+
+                generation.task_id = task.id
+                generation.save(update_fields=['task_id'])
+                processing_message = "Your photosheet is being processed. You can check it in History in a few moments."
+                logger.info(f"Queued generation task for session {session_id}")
+            else:
+                if remove_bg:
+                    for photo_path in saved_photos:
+                        success = remove_background(photo_path, bg_color)
+                        if not success:
+                            logger.warning(f"Failed to remove background from {os.path.basename(photo_path)}")
+
+                if output_type == "PDF":
+                    output_path = generate_pdf(
+                        photos=saved_photos,
+                        copies_map=copies_map,
+                        paper_size=paper_size,
+                        orientation=orientation,
+                        margin_cm=margin_cm,
+                        col_gap_cm=col_gap_cm,
+                        row_gap_cm=row_gap_cm,
+                        cut_lines=cut_lines,
+                        output_dir=output_dir,
+                        photo_width_cm=photo_width_cm,
+                        photo_height_cm=photo_height_cm,
+                    )
+
+                else:  # JPEG
+                    jpeg_files = generate_jpeg(
+                        photos=saved_photos,
+                        copies_map=copies_map,
+                        paper_size=paper_size,
+                        orientation=orientation,
+                        margin_cm=margin_cm,
+                        col_gap_cm=col_gap_cm,
+                        row_gap_cm=row_gap_cm,
+                        cut_lines=cut_lines,
+                        output_dir=output_dir,
+                        photo_width_cm=photo_width_cm,
+                        photo_height_cm=photo_height_cm,
+                    )
+
+                    output_path = jpeg_files[0] if len(jpeg_files) == 1 else zip_files(jpeg_files, output_dir)
+
+                output_url = settings.MEDIA_URL + f"outputs/{session_id}/" + os.path.basename(output_path)
+
+                logger.info(f"Successfully generated {output_type} for session {session_id}")
+                
+                try:
+                    file_size = os.path.getsize(output_path) if os.path.exists(output_path) else None
+                    total_copies = sum(copies_map.values())
+                    PhotoGeneration.objects.create(
+                        user=request.user if request.user.is_authenticated else None,
+                        session_id=session_id,
+                        num_photos=len(saved_photos),
+                        paper_size=paper_size,
+                        orientation=orientation,
+                        output_type=output_type,
+                        output_path=output_path,
+                        output_url=output_url,
+                        file_size_bytes=file_size,
+                        total_copies=total_copies,
+                        status='completed',
+                    )
+                    logger.info(f"Saved generation history for session {session_id}")
+                except Exception as e:
+                    logger.error(f"Failed to save generation history: {e}", exc_info=True)
 
         except ValidationError as e:
             error = str(e)
@@ -294,6 +317,7 @@ def index(request: HttpRequest) -> HttpResponse:
         "generator/index.html",
         {
             "output_url": output_url,
+            "processing_message": processing_message,
             "error": error,
             "paper_sizes": PAPER_SIZES.keys(),
             "paper_sizes_json": json.dumps(PAPER_SIZES),

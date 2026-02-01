@@ -1,0 +1,25 @@
+[Unit]
+Description=Gunicorn daemon for Passport App
+After=network.target
+
+[Service]
+Type=notify
+User=root
+Group=root
+WorkingDirectory=/root/studio_sheet
+Environment="PATH=/root/studio_sheet/venv/bin"
+EnvironmentFile=/root/studio_sheet/.env
+ExecStart=/root/studio_sheet/venv/bin/gunicorn \
+    --workers 2 \
+    --worker-class sync \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --access-logfile /root/studio_sheet/logs/gunicorn_access.log \
+    --error-logfile /root/studio_sheet/logs/gunicorn_error.log \
+    passport_app.wsgi:application
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -356,6 +356,23 @@
     </div>
     {% endif %}
 
+    {% if processing_message %}
+    <div class="card mt-4 border-info">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-hourglass-split text-info me-3" style="font-size: 48px;"></i>
+                <div class="flex-grow-1">
+                    <h5 class="card-title text-info mb-2">Processing</h5>
+                    <p class="card-text mb-0">{{ processing_message }}</p>
+                </div>
+                <a href="{% url 'generator:history' %}" class="btn btn-info btn-lg">
+                    <i class="bi bi-clock-history me-2"></i>Go to History
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 <!-- =========================
      BRANDING FOOTER
 ========================= -->

@@ -154,6 +154,37 @@ LOGIN_URL = 'generator:login'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Redis / Cache
+REDIS_URL = config('REDIS_URL', default='redis://127.0.0.1:6379/0')
+try:
+    import django_redis  # noqa: F401
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
+except Exception:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+# Celery
+CELERY_ENABLED = config('CELERY_ENABLED', default=True, cast=bool)
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=REDIS_URL)
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=REDIS_URL)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 60 * 10
+
 # File upload settings
 MAX_FILE_SIZE_MB = config('MAX_FILE_SIZE_MB', default=10, cast=int)
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024

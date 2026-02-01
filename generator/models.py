@@ -231,6 +231,34 @@ class PhotoGeneration(SoftDeleteMixin, models.Model):
         max_length=500,
         help_text="Public URL to download file"
     )
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='completed',
+        db_index=True,
+        help_text="Processing status"
+    )
+
+    task_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Background task ID (Celery)"
+    )
+
+    error_message = models.TextField(
+        blank=True,
+        default='',
+        help_text="Error message if generation failed"
+    )
     
     # Metadata
     file_size_bytes = models.BigIntegerField(

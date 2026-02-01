@@ -187,12 +187,25 @@
                                     </small>
                                 </div>
                             </div>
+                            {% if gen.status == 'failed' and gen.error_message %}
+                            <div class="mt-2">
+                                <small class="text-danger">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>{{ gen.error_message }}
+                                </small>
+                            </div>
+                            {% endif %}
                         </div>
                         <div>
                             {% if not gen.deleted_at %}
-                                <a href="{{ gen.output_url }}" class="btn btn-primary" download>
-                                    <i class="bi bi-download me-2"></i>Download
-                                </a>
+                                {% if gen.status == 'completed' and gen.output_url %}
+                                    <a href="{{ gen.output_url }}" class="btn btn-primary" download>
+                                        <i class="bi bi-download me-2"></i>Download
+                                    </a>
+                                {% elif gen.status == 'failed' %}
+                                    <span class="badge bg-danger me-2">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-info me-2">Processing</span>
+                                {% endif %}
                                 <button type="button" class="btn btn-danger delete-btn" data-id="{{ gen.id }}" data-session="{{ gen.session_id }}">
                                     <i class="bi bi-trash me-2"></i>Delete
                                 </button>
@@ -237,25 +250,35 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get CSRF token
-    const csrfToken = '{{ csrf_token }}';
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrfToken = getCookie('csrftoken');
     
     // Delete button handler
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function() {
             const generationId = this.dataset.id;
-            const sessionId = this.dataset.session;
             
-            if (confirm('Are you sure you want to delete this generation? You can restore it later from the Deleted tab.')) {
-                const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', csrfToken);
-                
+            if (confirm('Are you sure you want to delete this generation?')) {
                 fetch(`/api/delete/${generationId}/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrfToken
                     },
-                    body: formData
+                    credentials: 'same-origin'
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -273,4 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+</script>
 

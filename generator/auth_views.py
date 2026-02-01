@@ -239,3 +239,14 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
     }
     
     return render(request, 'generator/admin_dashboard.html', context)
+
+
+@login_required
+def generation_status(request: HttpRequest, session_id: str) -> JsonResponse:
+    """Return generation status for a session."""
+    generation = get_object_or_404(PhotoGeneration.all_objects, session_id=session_id, user=request.user)
+    return JsonResponse({
+        'status': generation.status,
+        'output_url': generation.output_url,
+        'error_message': generation.error_message,
+    })

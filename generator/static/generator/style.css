@@ -176,11 +176,18 @@ body {
     font-size: 1.1rem;
     border-radius: 10px;
     transition: all 0.3s ease;
+    color: #ffffff !important;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: #ffffff !important;
+}
+
+.btn-primary:active,
+.btn-primary:focus {
+    color: #ffffff !important;
 }
 
 .btn-success {
@@ -188,6 +195,22 @@ body {
     font-weight: 600;
     font-size: 1.1rem;
     border-radius: 10px;
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #ffffff !important;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #218838;
+    color: #ffffff !important;
+}
+
+.btn-success:active,
+.btn-success:focus {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+    color: #ffffff !important;
 }
 
 .btn-danger {
@@ -195,12 +218,159 @@ body {
     font-weight: 600;
     font-size: 1.1rem;
     border-radius: 10px;
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff !important;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+    color: #ffffff !important;
+}
+
+.btn-danger:active,
+.btn-danger:focus {
+    background-color: #bd2130;
+    border-color: #bd2130;
+    color: #ffffff !important;
+}
+
+.btn-warning {
+    padding: 14px 32px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000000 !important;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+    color: #000000 !important;
+}
+
+.btn-warning:active,
+.btn-warning:focus {
+    background-color: #d39e00;
+    border-color: #d39e00;
+    color: #000000 !important;
+}
+
+.btn-info {
+    padding: 14px 32px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: #ffffff !important;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+    border-color: #138496;
+    color: #ffffff !important;
+}
+
+.btn-info:active,
+.btn-info:focus {
+    background-color: #117a8b;
+    border-color: #117a8b;
+    color: #ffffff !important;
+}
+
+.btn-secondary {
+    padding: 14px 32px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #ffffff !important;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #5a6268;
+    color: #ffffff !important;
+}
+
+.btn-secondary:active,
+.btn-secondary:focus {
+    background-color: #545b62;
+    border-color: #545b62;
+    color: #ffffff !important;
+}
+
+/* Outline buttons with better contrast */
+.btn-outline-primary {
+    color: #667eea !important;
+    border-color: #667eea !important;
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: #ffffff !important;
+}
+
+.btn-outline-success {
+    color: #28a745 !important;
+    border-color: #28a745 !important;
+    background-color: transparent;
+}
+
+.btn-outline-success:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #ffffff !important;
+}
+
+.btn-outline-danger {
+    color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    background-color: transparent;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff !important;
+}
+
+.btn-outline-warning {
+    color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    background-color: transparent;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000000 !important;
+}
+
+.btn-outline-info {
+    color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    background-color: transparent;
+}
+
+.btn-outline-info:hover {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: #ffffff !important;
 }
 
 .btn-sm {
     padding: 10px 24px;
     font-size: 1rem;
     font-weight: 600;
+    color: inherit;
 }
 
 h1 {
@@ -935,28 +1105,31 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .crop-btn-cancel {
     background: white;
-    color: #6b7280;
+    color: #2d3748 !important;
     border-color: #e5e7eb;
 }
 
 .crop-btn-cancel:hover {
     background: #f9fafb;
     border-color: #d1d5db;
+    color: #2d3748 !important;
 }
 
 .crop-btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: white !important;
     border: none;
 }
 
 .crop-btn-primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    color: white !important;
 }
 
 .crop-btn-primary:active {
     transform: translateY(0);
+    color: white !important;
 }
 
 .crop-btn:disabled {
@@ -968,6 +1141,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .crop-btn-primary:disabled {
     background: #9ca3af;
     background-image: none;
+    color: white !important;
 }
 
 /* -------------------------
@@ -1235,19 +1409,23 @@ input[type="number"]::-webkit-outer-spin-button {
 .nav-link-logout {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    color: white !important;
 }
 
 .nav-link-logout:hover {
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    color: white !important;
 }
 
 .nav-link-primary {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    color: white !important;
 }
 
 .nav-link-primary:hover {
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    color: white !important;
 }
 
 /* -------------------------
@@ -1399,7 +1577,7 @@ input[type="number"]::-webkit-outer-spin-button {
     width: 100%;
     padding: 16px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: white !important;
     border: none;
     border-radius: 10px;
     font-size: 1.1rem;
@@ -1411,6 +1589,12 @@ input[type="number"]::-webkit-outer-spin-button {
 .btn-auth:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white !important;
+}
+
+.btn-auth:active,
+.btn-auth:focus {
+    color: white !important;
 }
 
 .auth-links {
