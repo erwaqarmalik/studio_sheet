@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.db.models import Q
 from typing import Optional
 
-from .models import PhotoGeneration, DeletionHistory, AdminActivity, SystemMaintenance
+from .models import PhotoGeneration, DeletionHistory, AdminActivity, SystemMaintenance, UserProfile
 
 
 def user_login(request: HttpRequest) -> HttpResponse:
@@ -148,6 +148,13 @@ def edit_profile(request: HttpRequest) -> HttpResponse:
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email', '').strip()
+        phone_number = request.POST.get('phone_number', '').strip()
+        street_address = request.POST.get('street_address', '').strip()
+        landmark = request.POST.get('landmark', '').strip()
+        city = request.POST.get('city', '').strip()
+        state = request.POST.get('state', '').strip()
+        postal_code = request.POST.get('postal_code', '').strip()
+        country = request.POST.get('country', '').strip()
         current_password = request.POST.get('current_password', '')
         new_password = request.POST.get('new_password', '')
         new_password_confirm = request.POST.get('new_password_confirm', '')
@@ -188,6 +195,17 @@ def edit_profile(request: HttpRequest) -> HttpResponse:
                 user.first_name = first_name
                 user.last_name = last_name
                 user.email = email
+                
+                # Update or create profile
+                profile, created = UserProfile.objects.get_or_create(user=user)
+                profile.phone_number = phone_number
+                profile.street_address = street_address
+                profile.landmark = landmark
+                profile.city = city
+                profile.state = state
+                profile.postal_code = postal_code
+                profile.country = country
+                profile.save()
                 
                 # Update password if provided
                 if new_password:

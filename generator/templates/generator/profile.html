@@ -142,10 +142,48 @@
                                 <strong class="fs-5 text-primary">{{ total_generations }}</strong>
                             </div>
                         </div>
-                        <div class="col-12">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body p-4">
+                    <h4 class="mb-4"><i class="bi bi-geo-alt me-2"></i>Address Information</h4>
+                    <div class="row g-4">
+                        <div class="col-md-12">
                             <div class="p-3 bg-light rounded">
-                                <small class="text-muted text-uppercase d-block mb-2">Address</small>
-                                <strong>{{ user.profile.address|default:"N/A" }}</strong>
+                                <small class="text-muted text-uppercase d-block mb-2">Street Address</small>
+                                <strong>{{ user.profile.street_address|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted text-uppercase d-block mb-2">Landmark</small>
+                                <strong>{{ user.profile.landmark|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted text-uppercase d-block mb-2">City</small>
+                                <strong>{{ user.profile.city|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted text-uppercase d-block mb-2">State</small>
+                                <strong>{{ user.profile.state|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted text-uppercase d-block mb-2">Postal Code</small>
+                                <strong>{{ user.profile.postal_code|default:"N/A" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted text-uppercase d-block mb-2">Country</small>
+                                <strong>{{ user.profile.country|default:"N/A" }}</strong>
                             </div>
                         </div>
                     </div>

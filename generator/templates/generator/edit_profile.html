@@ -108,6 +108,49 @@
                             <small class="form-text text-muted">Username cannot be changed</small>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ user.profile.phone_number|default:'' }}" placeholder="+1234567890">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Address Information</h5>
+
+                        <div class="mb-3">
+                            <label for="street_address" class="form-label">Street Address</label>
+                            <input type="text" class="form-control" id="street_address" name="street_address" value="{{ user.profile.street_address|default:'' }}" placeholder="House number, street name">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="landmark" class="form-label">Landmark</label>
+                            <input type="text" class="form-control" id="landmark" name="landmark" value="{{ user.profile.landmark|default:'' }}" placeholder="Nearby landmark">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ user.profile.city|default:'' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <input type="text" class="form-control" id="state" name="state" value="{{ user.profile.state|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="postal_code" class="form-label">Postal Code</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code" value="{{ user.profile.postal_code|default:'' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="country" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="country" name="country" value="{{ user.profile.country|default:'' }}">
+                            </div>
+                        </div>
+
                         <hr class="my-4">
 
                         <h5 class="mb-3"><i class="bi bi-key me-2"></i>Change Password (Optional)</h5>
