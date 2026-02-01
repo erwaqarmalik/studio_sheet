@@ -24,11 +24,20 @@ echo "=== Removing old app folders ==="
 rm -rf /root/studio_sheet
 rm -rf /var/lib/postgresql/16/main
 
-echo "=== Restarting PostgreSQL to recreate data directory ==="
-systemctl restart postgresql
+echo "=== Stopping PostgreSQL ==="
+systemctl stop postgresql
 
-echo "=== Waiting for PostgreSQL to be ready (max 30 seconds) ==="
-for i in {1..30}; do
+echo "=== Removing old PostgreSQL data ==="
+rm -rf /var/lib/postgresql/16/main
+mkdir -p /var/lib/postgresql/16/main
+chown postgres:postgres /var/lib/postgresql/16/main
+chmod 700 /var/lib/postgresql/16/main
+
+echo "=== Starting PostgreSQL ==="
+systemctl start postgresql
+
+echo "=== Waiting for PostgreSQL to be ready (max 60 seconds) ==="
+for i in {1..60}; do
     if sudo -u postgres pg_isready -q 2>/dev/null; then
         echo "PostgreSQL is ready!"
         break
@@ -36,6 +45,8 @@ for i in {1..30}; do
     echo -n "."
     sleep 1
 done
+
+sleep 2
 
 echo ""
 echo "=== Creating fresh PostgreSQL database and user ==="
