@@ -2,12 +2,22 @@ param(
     [string]$DropletIP = "165.22.214.244",
     [string]$RootPath = "/root/studio_sheet",
     [string]$SuperUserName = "erwaqarmalik",
+    [string]$SSHPassword = "",
     [string]$SSLPassword = ""
 )
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "Passport App - Full Fresh Deployment Script" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Prompt for SSH Password (required for all commands)
+if ([string]::IsNullOrEmpty($SSHPassword)) {
+    Write-Host "Enter SSH Password for root@$DropletIP:" -ForegroundColor Yellow
+    $secureSSHPassword = Read-Host "SSH Password" -AsSecureString
+    $SSHPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToCoTaskMemUnicode($secureSSHPassword))
+    Write-Host "[OK] SSH Password saved - using for all commands" -ForegroundColor Green
+}
 Write-Host ""
 
 # Prompt for SSL Password (optional)
@@ -27,12 +37,13 @@ Write-Host ""
 function SSH-Exec {
     param([string]$Cmd, [string]$Desc = "")
     if ($Desc) { Write-Host "[*] $Desc" -ForegroundColor Cyan }
-    ssh -o StrictHostKeyChecking=no root@$DropletIP $Cmd 2>&1
+    $output = echo $SSHPassword | sshpass -p "$SSHPassword" ssh -o StrictHostKeyChecking=no root@$DropletIP $Cmd 2>&1
+    return $output
 }
 
 function SSH-Quiet {
     param([string]$Cmd)
-    ssh -o StrictHostKeyChecking=no root@$DropletIP $Cmd 2>&1 | Out-Null
+    echo $SSHPassword | sshpass -p "$SSHPassword" ssh -o StrictHostKeyChecking=no root@$DropletIP $Cmd 2>&1 | Out-Null
 }
 
 Write-Host "[*] Generating Secure Credentials..." -ForegroundColor Yellow
@@ -163,7 +174,7 @@ if ([string]::IsNullOrEmpty($SSLPassword)) {
     Write-Host "[OK] SSL password saved for certificate operations" -ForegroundColor Green
     Write-Host "[TIP] To setup Let's Encrypt SSL:" -ForegroundColor Cyan
     Write-Host "      systemctl stop nginx" -ForegroundColor Gray
-    Write-Host "      certbot certonly --standalone -d your-domain.com --password-manager --noninteractive" -ForegroundColor Gray
+    Write-Host "      certbot certonly --standalone -d your-domain.com" -ForegroundColor Gray
     Write-Host "      systemctl start nginx" -ForegroundColor Gray
 }
 Write-Host ""
@@ -204,8 +215,6 @@ Write-Host ""
 if ([string]::IsNullOrEmpty($SSLPassword)) {
     Write-Host "SSL CERTIFICATE:" -ForegroundColor Yellow
     Write-Host "  NOT CONFIGURED (no password provided)" -ForegroundColor Yellow
-    Write-Host "  To setup SSL later, run:" -ForegroundColor Cyan
-    Write-Host "    .\deploy_files\deploy_fresh.ps1 -SSLPassword 'your-password'" -ForegroundColor Gray
 } else {
     Write-Host "SSL CERTIFICATE:" -ForegroundColor Yellow
     Write-Host "  Password saved in /tmp/ssl_password.txt on droplet" -ForegroundColor Green
