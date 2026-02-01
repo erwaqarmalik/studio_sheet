@@ -45,6 +45,8 @@ def index(request: HttpRequest) -> HttpResponse:
     output_url: Optional[str] = None
     error: Optional[str] = None
     processing_message: Optional[str] = None
+    processing_session_id: Optional[str] = None
+    processing_generation_id: Optional[int] = None
 
     if request.method == "POST":
         try:
@@ -234,7 +236,9 @@ def index(request: HttpRequest) -> HttpResponse:
 
                 generation.task_id = task.id
                 generation.save(update_fields=['task_id'])
-                processing_message = "Your photosheet is being processed. You can check it in History in a few moments."
+                processing_message = "Your photosheet is being processed. Please wait..."
+                processing_session_id = session_id
+                processing_generation_id = generation.id
                 logger.info(f"Queued generation task for session {session_id}")
             else:
                 if remove_bg:
@@ -318,6 +322,8 @@ def index(request: HttpRequest) -> HttpResponse:
         {
             "output_url": output_url,
             "processing_message": processing_message,
+            "processing_session_id": processing_session_id,
+            "processing_generation_id": processing_generation_id,
             "error": error,
             "paper_sizes": PAPER_SIZES.keys(),
             "paper_sizes_json": json.dumps(PAPER_SIZES),

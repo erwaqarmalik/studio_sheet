@@ -357,15 +357,25 @@
     {% endif %}
 
     {% if processing_message %}
-    <div class="card mt-4 border-info">
+    <div class="card mt-4 border-info" id="processingCard" data-session-id="{{ processing_session_id }}" data-generation-id="{{ processing_generation_id }}">
         <div class="card-body">
             <div class="d-flex align-items-center">
                 <i class="bi bi-hourglass-split text-info me-3" style="font-size: 48px;"></i>
                 <div class="flex-grow-1">
                     <h5 class="card-title text-info mb-2">Processing</h5>
-                    <p class="card-text mb-0">{{ processing_message }}</p>
+                    <p class="card-text mb-3" id="processingText">{{ processing_message }}</p>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 100%;" id="progressBar">
+                            <span id="progressText">Generating your photosheet...</span>
+                        </div>
+                    </div>
+                    <div id="downloadSection" style="display: none;" class="mt-3">
+                        <a href="#" id="downloadBtn" class="btn btn-success btn-lg">
+                            <i class="bi bi-download me-2"></i>Download Photosheet
+                        </a>
+                    </div>
                 </div>
-                <a href="{% url 'generator:history' %}" class="btn btn-info btn-lg">
+                <a href="{% url 'generator:history' %}" class="btn btn-outline-info">
                     <i class="bi bi-clock-history me-2"></i>Go to History
                 </a>
             </div>
@@ -415,6 +425,87 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- ✅ JS via Django static -->
 <script src="{% static 'generator/app.js' %}"></script>
+
+<!-- Status Polling Script -->
+<script>
+(function() {
+    const processingCard = document.getElementById('processingCard');
+    if (!processingCard) return;
+
+    const sessionId = processingCard.dataset.sessionId;
+    const generationId = processingCard.dataset.generationId;
+    if (!sessionId) return;
+
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const downloadSection = document.getElementById('downloadSection');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const processingText = document.getElementById('processingText');
+
+    let pollInterval = null;
+    let pollCount = 0;
+    const MAX_POLLS = 60; // 60 attempts = 1 minute max
+
+    function checkStatus() {
+        pollCount++;
+        
+        fetch(`/api/generation-status/${sessionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'completed' && data.output_url) {
+                    // Success! Show download button
+                    clearInterval(pollInterval);
+                    progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped', 'bg-info');
+                    progressBar.classList.add('bg-success');
+                    progressBar.style.width = '100%';
+                    progressText.textContent = 'Ready!';
+                    
+                    downloadBtn.href = data.output_url;
+                    downloadSection.style.display = 'block';
+                    processingText.textContent = 'Your photosheet is ready for download!';
+                    
+                    // Change icon to checkmark
+                    const icon = processingCard.querySelector('.bi-hourglass-split');
+                    if (icon) {
+                        icon.classList.remove('bi-hourglass-split', 'text-info');
+                        icon.classList.add('bi-check-circle-fill', 'text-success');
+                    }
+                    
+                } else if (data.status === 'failed' || data.status === 'error') {
+                    // Error occurred
+                    clearInterval(pollInterval);
+                    progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped', 'bg-info');
+                    progressBar.classList.add('bg-danger');
+                    progressText.textContent = 'Failed';
+                    processingText.textContent = data.error_message || 'An error occurred during processing. Please try again.';
+                    
+                    const icon = processingCard.querySelector('.bi-hourglass-split');
+                    if (icon) {
+                        icon.classList.remove('bi-hourglass-split', 'text-info');
+                        icon.classList.add('bi-exclamation-triangle-fill', 'text-danger');
+                    }
+                    
+                } else if (pollCount >= MAX_POLLS) {
+                    // Timeout - taking too long
+                    clearInterval(pollInterval);
+                    progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+                    progressText.textContent = 'Still processing...';
+                    processingText.textContent = 'This is taking longer than expected. Please check History in a few moments.';
+                }
+            })
+            .catch(error => {
+                console.error('Status check failed:', error);
+                // Continue polling even on error, might be temporary
+            });
+    }
+
+    // Start polling every second
+    pollInterval = setInterval(checkStatus, 1000);
+    
+    // Check immediately
+    checkStatus();
+})();
+</script>
 
 </body>
 </html>
