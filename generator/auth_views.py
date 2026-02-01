@@ -217,7 +217,7 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
         'total_generations': PhotoGeneration.objects.count(),
         'active_generations': PhotoGeneration.objects.filter(deleted_at__isnull=True).count(),
         'deleted_generations': PhotoGeneration.all_objects.filter(deleted_at__isnull=False).count(),
-        'total_files_mb': PhotoGeneration.objects.aggregate(Sum('file_size_mb'))['file_size_mb__sum'] or 0,
+        'total_files_mb': (PhotoGeneration.objects.aggregate(Sum('file_size_bytes'))['file_size_bytes__sum'] or 0) / (1024 * 1024),
         'today_generations': PhotoGeneration.objects.filter(created_at__date=today.date()).count(),
         'activity_today': AdminActivity.objects.filter(timestamp__date=today.date()).count(),
     }
