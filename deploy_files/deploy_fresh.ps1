@@ -1,12 +1,27 @@
 param(
     [string]$DropletIP = "165.22.214.244",
     [string]$RootPath = "/root/studio_sheet",
-    [string]$SuperUserName = "erwaqarmalik"
+    [string]$SuperUserName = "erwaqarmalik",
+    [string]$SSLPassword = ""
 )
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "Passport App - Full Fresh Deployment Script" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Prompt for SSL Password (optional)
+if ([string]::IsNullOrEmpty($SSLPassword)) {
+    Write-Host "Optional: Enter SSL Certificate Password (or press Enter to skip)" -ForegroundColor Yellow
+    $secureSSLPassword = Read-Host "SSL Password" -AsSecureString
+    if ($secureSSLPassword.Length -gt 0) {
+        $SSLPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToCoTaskMemUnicode($secureSSLPassword))
+        Write-Host "[OK] SSL Password saved" -ForegroundColor Green
+    } else {
+        $SSLPassword = ""
+        Write-Host "[SKIP] SSL Password skipped" -ForegroundColor Yellow
+    }
+}
 Write-Host ""
 
 function SSH-Exec {
@@ -139,7 +154,21 @@ Start-Sleep -Seconds 3
 Write-Host "[OK] All services started" -ForegroundColor Green
 Write-Host ""
 
-Write-Host "STEP 12: Testing Deployment..." -ForegroundColor Green
+Write-Host "STEP 12: SSL/HTTPS Configuration..." -ForegroundColor Green
+if ([string]::IsNullOrEmpty($SSLPassword)) {
+    Write-Host "[SKIP] SSL configuration skipped (no password provided)" -ForegroundColor Yellow
+} else {
+    Write-Host "[INFO] SSL Password available for certificate setup" -ForegroundColor Cyan
+    SSH-Quiet "cd $RootPath && echo '$SSLPassword' > /tmp/ssl_password.txt && chmod 600 /tmp/ssl_password.txt"
+    Write-Host "[OK] SSL password saved for certificate operations" -ForegroundColor Green
+    Write-Host "[TIP] To setup Let's Encrypt SSL:" -ForegroundColor Cyan
+    Write-Host "      systemctl stop nginx" -ForegroundColor Gray
+    Write-Host "      certbot certonly --standalone -d your-domain.com --password-manager --noninteractive" -ForegroundColor Gray
+    Write-Host "      systemctl start nginx" -ForegroundColor Gray
+}
+Write-Host ""
+
+Write-Host "STEP 13: Testing Deployment..." -ForegroundColor Green
 $test = SSH-Exec "curl -s -I http://165.22.214.244" | Select-Object -First 1
 Write-Host "Response: $test" -ForegroundColor White
 
@@ -170,6 +199,18 @@ Write-Host "  Port:     5432" -ForegroundColor Green
 Write-Host ""
 Write-Host "DJANGO SECRET_KEY:" -ForegroundColor Yellow
 Write-Host "  $secretKey" -ForegroundColor Magenta
+Write-Host ""
+
+if ([string]::IsNullOrEmpty($SSLPassword)) {
+    Write-Host "SSL CERTIFICATE:" -ForegroundColor Yellow
+    Write-Host "  NOT CONFIGURED (no password provided)" -ForegroundColor Yellow
+    Write-Host "  To setup SSL later, run:" -ForegroundColor Cyan
+    Write-Host "    .\deploy_files\deploy_fresh.ps1 -SSLPassword 'your-password'" -ForegroundColor Gray
+} else {
+    Write-Host "SSL CERTIFICATE:" -ForegroundColor Yellow
+    Write-Host "  Password saved in /tmp/ssl_password.txt on droplet" -ForegroundColor Green
+    Write-Host "  Ready for certificate operations" -ForegroundColor Green
+}
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "[OK] Save credentials in a secure location" -ForegroundColor Green
