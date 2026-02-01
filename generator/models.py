@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from .mixins import SoftDeleteMixin
 
 
 class UserProfile(models.Model):
@@ -169,10 +170,11 @@ class UserProfile(models.Model):
         return all(required_fields)
 
 
-class PhotoGeneration(models.Model):
+class PhotoGeneration(SoftDeleteMixin, models.Model):
     """
     Record of a passport photo generation request.
     Tracks user history of generated photo sheets.
+    Supports soft delete - deleted records can be restored.
     """
     user = models.ForeignKey(
         User,
@@ -339,10 +341,11 @@ class UserRateLimit(models.Model):
             self.save()
 
 
-class GenerationAudit(models.Model):
+class GenerationAudit(SoftDeleteMixin, models.Model):
     """
     Audit trail for all photo generation actions.
     For compliance, debugging, and analytics.
+    Supports soft delete for data retention compliance.
     """
     ACTIONS = [
         ('created', 'Created'),
@@ -560,3 +563,82 @@ def create_rate_limit(sender, instance, created, **kwargs):
     """
     if created:
         UserRateLimit.objects.get_or_create(user=instance)
+
+
+class DeletionHistory(models.Model):
+    """
+    Track all soft delete and restoration operations.
+    Provides audit trail for data lifecycle management.
+    """
+    ACTIONS = [
+        ('deleted', 'Soft Deleted'),
+        ('restored', 'Restored'),
+        ('hard_deleted', 'Permanently Deleted'),
+    ]
+    
+    model_name = models.CharField(
+        max_length=100,
+        db_index=True,
+        help_text="Name of the model that was deleted/restored"
+    )
+    
+    object_id = models.IntegerField(
+        db_index=True,
+        help_text="Primary key of the deleted/restored object"
+    )
+    
+    action = models.CharField(
+        max_length=20,
+        choices=ACTIONS,
+        db_index=True,
+        help_text="Action performed (deleted/restored/hard_deleted)"
+    )
+    
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='deletion_actions',
+        help_text="User who performed the action"
+    )
+    
+    performed_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="When the action was performed"
+    )
+    
+    reason = models.TextField(
+        blank=True,
+        help_text="Reason for the action"
+    )
+    
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Additional metadata about the action"
+    )
+    
+    class Meta:
+        ordering = ['-performed_at']
+        indexes = [
+            models.Index(fields=['model_name', 'object_id', '-performed_at']),
+            models.Index(fields=['performed_by', '-performed_at']),
+            models.Index(fields=['action', '-performed_at']),
+        ]
+        verbose_name = "Deletion History"
+        verbose_name_plural = "Deletion History"
+    
+    def __str__(self):
+        user_str = self.performed_by.username if self.performed_by else "System"
+        return f"{self.model_name}#{self.object_id} - {self.action} by {user_str}"
+    
+    def get_object(self):
+        """Try to retrieve the related object."""
+        try:
+            from django.apps import apps
+            model = apps.get_model('generator', self.model_name)
+            return model.all_objects.get(pk=self.object_id)
+        except Exception:
+            return None
