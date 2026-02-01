@@ -67,7 +67,7 @@ Write-Host ""
 
 Write-Host "STEP 4: Setting Up PostgreSQL..." -ForegroundColor Green
 SSH-Quiet "sudo -u postgres psql -c 'CREATE DATABASE passport_app_db;' 2>/dev/null; true"
-SSH-Quiet "sudo -u postgres psql -c \"CREATE USER passport_user WITH PASSWORD '$dbPassword';\" 2>/dev/null; true"
+SSH-Quiet "sudo -u postgres psql -c 'CREATE USER passport_user WITH PASSWORD ''$dbPassword'';' 2>/dev/null; true"
 SSH-Quiet "sudo -u postgres psql -c 'ALTER ROLE passport_user SET client_encoding TO utf8;' 2>/dev/null; true"
 SSH-Quiet "sudo -u postgres psql -c 'ALTER ROLE passport_user SET default_transaction_isolation TO read_committed;' 2>/dev/null; true"
 SSH-Quiet "sudo -u postgres psql -c 'ALTER ROLE passport_user SET timezone TO UTC;' 2>/dev/null; true"
