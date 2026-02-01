@@ -871,29 +871,48 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
     
-    bgRemovalColorPreset.addEventListener('change', function() {
-        bgRemovalColorPicker.value = this.value;
-        bgColorPreview.style.backgroundColor = this.value;
-    });
-    
     // Handle quick color buttons
     const colorBtnQuicks = document.querySelectorAll('.color-btn-quick');
+    const colorNames = {
+        '#FFFFFF': 'White',
+        '#E8F4F8': 'Light Blue',
+        '#F0F0F0': 'Light Gray',
+        '#FFF5E6': 'Cream',
+        '#000000': 'Black'
+    };
+    
     colorBtnQuicks.forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const color = this.getAttribute('data-color');
-            bgRemovalColorPicker.value = color;
-            bgColorPreview.style.backgroundColor = color;
+            if (bgRemovalColorPicker) bgRemovalColorPicker.value = color;
+            if (bgColorPreview) {
+                bgColorPreview.style.backgroundColor = color;
+                bgColorPreview.style.color = (color === '#FFFFFF' || color === '#FFE4B5' || color === '#F0F0F0' || color === '#E8F4F8') ? '#333' : '#fff';
+            }
         });
     });
     
-    bgRemovalColorPicker.addEventListener('input', function() {
-        bgColorPreview.style.backgroundColor = this.value;
-    });
+    // Handle custom color picker button - opens native color picker
+    // Note: Color input is overlaid on button, so it opens automatically when clicked
     
-    bgColorPreview.addEventListener('click', function() {
-        bgRemovalColorPicker.click();
-    });
+    // Handle color picker change (after user confirms in native dialog)
+    if (bgRemovalColorPicker) {
+        bgRemovalColorPicker.addEventListener('change', function() {
+            if (bgColorPreview) {
+                bgColorPreview.style.backgroundColor = this.value;
+                bgColorPreview.style.color = (this.value === '#FFFFFF' || this.value === '#FFE4B5' || this.value === '#F0F0F0' || this.value === '#E8F4F8') ? '#333' : '#fff';
+            }
+        });
+        
+        // Also update on input for real-time preview
+        bgRemovalColorPicker.addEventListener('input', function() {
+            if (bgColorPreview) {
+                bgColorPreview.style.backgroundColor = this.value;
+                bgColorPreview.style.color = (this.value === '#FFFFFF' || this.value === '#FFE4B5' || this.value === '#F0F0F0' || this.value === '#E8F4F8') ? '#333' : '#fff';
+            }
+        });
+    }
     
     bgRemovalApply.addEventListener('click', async () => {
         if (currentBgRemovalIndex === null || !currentBgRemovalDataUrl) {

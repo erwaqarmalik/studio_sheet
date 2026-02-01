@@ -158,36 +158,44 @@
             </div>
             <div class="crop-info">
                 <p><strong>Select Background Color:</strong></p>
-                <div class="color-selector-group mb-3">
-                    <div class="color-preview-container mb-3">
-                        <div class="color-preview-box" id="bgColorPreview" style="background-color: #FFFFFF; border: 2px solid #ddd; border-radius: 8px; height: 80px;">
-                        </div>
-                    </div>
-                    <div class="color-button-container d-flex gap-2 flex-wrap mb-3">
-                        <!-- Quick color buttons -->
-                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 2px solid #999; color: #333;" title="White">
-                            <span class="d-block small fw-bold">White</span>
-                        </button>
-                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#E8F4F8" style="background-color: #E8F4F8; border: 2px solid #ccc;" title="Light Blue">
-                            <span class="d-block small fw-bold">Light Blue</span>
-                        </button>
-                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#F0F0F0" style="background-color: #F0F0F0; border: 2px solid #ccc;" title="Light Gray">
-                            <span class="d-block small fw-bold">Light Gray</span>
-                        </button>
-                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#FFF5E6" style="background-color: #FFF5E6; border: 2px solid #ccc;" title="Cream">
-                            <span class="d-block small fw-bold">Cream</span>
-                        </button>
-                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#000000" style="background-color: #000000; border: 2px solid #333; color: white;" title="Black">
-                            <span class="d-block small fw-bold">Black</span>
-                        </button>
-                        <!-- Custom color picker button -->
-                        <label class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eyedropper me-2"></i>Custom
-                            <input type="color" id="bgRemovalColorPicker" class="form-control-color" value="#FFFFFF" title="Pick custom color" style="display: none; cursor: pointer;">
-                        </label>
+                
+                <!-- Color Preview -->
+                <div class="mb-3">
+                    <small class="d-block mb-2"><strong>Preview:</strong></small>
+                    <div class="color-preview-box" id="bgColorPreview" style="background-color: #FFFFFF !important; border: 2px solid #333; border-radius: 8px; height: 80px; width: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #666; font-size: 14px; background-image: none !important;">
+                        Choose Custom Colour
                     </div>
                 </div>
-                <small class="text-muted">Click a color or use the eyedropper for custom colors</small>
+
+                <!-- Quick Color Buttons -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-sm w-100 color-btn-quick" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 2px solid #999; height: 45px;" title="White"></button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-sm w-100 color-btn-quick" data-color="#E8F4F8" style="background-color: #E8F4F8; border: 2px solid #ccc; height: 45px;" title="Light Blue"></button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-sm w-100 color-btn-quick" data-color="#F0F0F0" style="background-color: #F0F0F0; border: 2px solid #ccc; height: 45px;" title="Light Gray"></button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-sm w-100 color-btn-quick" data-color="#FFF5E6" style="background-color: #FFF5E6; border: 2px solid #ccc; height: 45px;" title="Cream"></button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-sm w-100 color-btn-quick" data-color="#000000" style="background-color: #000000; border: 2px solid #333; height: 45px;" title="Black"></button>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label mb-2">Custom Color:</label>
+                        <div style="position: relative;">
+                            <input type="color" id="bgRemovalColorPicker" value="#FFFFFF" style="position: absolute; opacity: 0; width: 100%; height: 45px; cursor: pointer; z-index: 10;">
+                            <button class="btn btn-outline-secondary w-100" type="button" id="bgColorPickerBtn" style="height: 45px; pointer-events: none;">
+                                <i class="bi bi-eyedropper me-2"></i>Choose Custom Colour
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <small class="text-muted">Click a color or use the eyedropper for custom selection</small>
             </div>
         </div>
         <div class="crop-modal-footer">
