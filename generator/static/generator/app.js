@@ -103,7 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const bgRemovalCancel = document.getElementById("bgRemovalCancel");
     const bgRemovalApply = document.getElementById("bgRemovalApply");
     const bgRemovalColorPicker = document.getElementById("bgRemovalColorPicker");
-    const bgRemovalColorPreset = document.getElementById("bgRemovalColorPreset");
     const bgColorPreview = document.getElementById("bgColorPreview");
     
     let cropper = null;
@@ -875,6 +874,17 @@ document.addEventListener("DOMContentLoaded", () => {
     bgRemovalColorPreset.addEventListener('change', function() {
         bgRemovalColorPicker.value = this.value;
         bgColorPreview.style.backgroundColor = this.value;
+    });
+    
+    // Handle quick color buttons
+    const colorBtnQuicks = document.querySelectorAll('.color-btn-quick');
+    colorBtnQuicks.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const color = this.getAttribute('data-color');
+            bgRemovalColorPicker.value = color;
+            bgColorPreview.style.backgroundColor = color;
+        });
     });
     
     bgRemovalColorPicker.addEventListener('input', function() {

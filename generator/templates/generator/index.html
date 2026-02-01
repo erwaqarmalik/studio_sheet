@@ -159,27 +159,35 @@
             <div class="crop-info">
                 <p><strong>Select Background Color:</strong></p>
                 <div class="color-selector-group mb-3">
-                    <div class="color-preview-container">
-                        <div class="color-preview-box" id="bgColorPreview" style="background-color: #FFFFFF;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
-                                <path d="M12 6v6l4.3 2.6"></path>
-                                <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
-                            </svg>
+                    <div class="color-preview-container mb-3">
+                        <div class="color-preview-box" id="bgColorPreview" style="background-color: #FFFFFF; border: 2px solid #ddd; border-radius: 8px; height: 80px;">
                         </div>
                     </div>
-                    <div class="color-input-container">
-                        <input type="color" id="bgRemovalColorPicker" class="form-control form-control-color" value="#FFFFFF" title="Click to select color">
-                        <select id="bgRemovalColorPreset" class="form-select">
-                            <option value="#FFFFFF" selected>White</option>
-                            <option value="#E8F4F8">Light Blue</option>
-                            <option value="#F0F0F0">Light Gray</option>
-                            <option value="#FFF5E6">Cream</option>
-                            <option value="#000000">Black</option>
-                        </select>
+                    <div class="color-button-container d-flex gap-2 flex-wrap mb-3">
+                        <!-- Quick color buttons -->
+                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 2px solid #999; color: #333;" title="White">
+                            <span class="d-block small fw-bold">White</span>
+                        </button>
+                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#E8F4F8" style="background-color: #E8F4F8; border: 2px solid #ccc;" title="Light Blue">
+                            <span class="d-block small fw-bold">Light Blue</span>
+                        </button>
+                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#F0F0F0" style="background-color: #F0F0F0; border: 2px solid #ccc;" title="Light Gray">
+                            <span class="d-block small fw-bold">Light Gray</span>
+                        </button>
+                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#FFF5E6" style="background-color: #FFF5E6; border: 2px solid #ccc;" title="Cream">
+                            <span class="d-block small fw-bold">Cream</span>
+                        </button>
+                        <button type="button" class="btn btn-sm color-btn-quick" data-color="#000000" style="background-color: #000000; border: 2px solid #333; color: white;" title="Black">
+                            <span class="d-block small fw-bold">Black</span>
+                        </button>
+                        <!-- Custom color picker button -->
+                        <label class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eyedropper me-2"></i>Custom
+                            <input type="color" id="bgRemovalColorPicker" class="form-control-color" value="#FFFFFF" title="Pick custom color" style="display: none; cursor: pointer;">
+                        </label>
                     </div>
                 </div>
-                <small class="text-muted">Choose a color or use the color picker</small>
+                <small class="text-muted">Click a color or use the eyedropper for custom colors</small>
             </div>
         </div>
         <div class="crop-modal-footer">
