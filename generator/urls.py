@@ -4,7 +4,7 @@ URL configuration for passport photo generator.
 from django.urls import path
 from .views import index
 from .auth_views import (
-    user_login, user_logout, history, profile,
+    user_login, user_logout, history, profile, edit_profile,
     soft_delete_generation, admin_dashboard, generation_status,
     create_user, manage_users
 )
@@ -18,6 +18,7 @@ urlpatterns = [
     path("logout/", user_logout, name="logout"),
     path("history/", history, name="history"),
     path("profile/", profile, name="profile"),
+    path("profile/edit/", edit_profile, name="edit_profile"),
     path("admin/dashboard/", admin_dashboard, name="admin_dashboard"),
     path("admin/users/", manage_users, name="manage_users"),
     path("admin/users/create/", create_user, name="create_user"),

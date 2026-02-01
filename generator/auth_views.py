@@ -132,6 +132,96 @@ def profile(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+def edit_profile(request: HttpRequest) -> HttpResponse:
+    """
+    Edit user profile.
+    
+    Args:
+        request: Django HTTP request
+    
+    Returns:
+        Rendered edit profile page or redirect on success
+    """
+    user = request.user
+    
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        current_password = request.POST.get('current_password', '')
+        new_password = request.POST.get('new_password', '')
+        new_password_confirm = request.POST.get('new_password_confirm', '')
+        
+        errors = []
+        
+        # Validate basic info
+        if not first_name:
+            errors.append('First name is required.')
+        
+        if not last_name:
+            errors.append('Last name is required.')
+        
+        if not email:
+            errors.append('Email is required.')
+        elif User.objects.filter(email=email).exclude(id=user.id).exists():
+            errors.append('Email already exists.')
+        
+        # Validate password change if provided
+        if new_password or new_password_confirm or current_password:
+            if not current_password:
+                errors.append('Current password is required to change password.')
+            elif not user.check_password(current_password):
+                errors.append('Current password is incorrect.')
+            elif not new_password:
+                errors.append('New password is required.')
+            elif len(new_password) < 8:
+                errors.append('New password must be at least 8 characters long.')
+            elif new_password != new_password_confirm:
+                errors.append('New passwords do not match.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            try:
+                # Update basic info
+                user.first_name = first_name
+                user.last_name = last_name
+                user.email = email
+                
+                # Update password if provided
+                if new_password:
+                    user.set_password(new_password)
+                    messages.success(request, 'Password updated successfully. Please login again.')
+                
+                user.save()
+                
+                # Log activity
+                AdminActivity.objects.create(
+                    action_type='admin_action',
+                    user=user,
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    details={'action': 'profile_updated', 'description': f'Updated profile: {user.username}'}
+                )
+                
+                if new_password:
+                    # Re-authenticate if password changed
+                    return redirect('generator:login')
+                else:
+                    messages.success(request, 'Profile updated successfully!')
+                    return redirect('generator:profile')
+                    
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {str(e)}')
+    
+    context = {
+        'user': user,
+    }
+    
+    return render(request, 'generator/edit_profile.html', context)
+
+
+@login_required
 @require_http_methods(["POST"])
 def soft_delete_generation(request: HttpRequest, generation_id: int) -> JsonResponse:
     """
