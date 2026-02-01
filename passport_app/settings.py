@@ -83,11 +83,12 @@ WSGI_APPLICATION = 'passport_app.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 # Support both SQLite (development) and PostgreSQL (production)
-if DEBUG or config('DB_ENGINE', default='sqlite') == 'sqlite':
+db_engine = config('DB_ENGINE', default='sqlite3').lower()
+if 'sqlite' in db_engine:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
         }
     }
 else:
