@@ -267,7 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     const error = await response.json();
                     errorMsg = error.error || errorMsg;
                 } catch (e) {
-                    // Response wasn't JSON, use status text
                     if (response.status === 503) {
                         errorMsg = 'Background removal service is unavailable. Please try again in a moment.';
                     } else if (response.status === 502 || response.status === 504) {
@@ -291,6 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =====================================
        HELPERS
     ===================================== */
+
     function safeNum(el, fallback) {
         const v = parseFloat(el.value);
         return Number.isFinite(v) ? v : fallback;
