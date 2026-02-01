@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     const CONFIG = JSON.parse(configEl.textContent);
-    console.log("Loaded CONFIG:", CONFIG);
+
 
     /* =====================================
        LOAD PAPER SIZES
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     const PHOTO_SIZES = JSON.parse(photoSizesEl.textContent);
-    console.log("Loaded PHOTO_SIZES:", PHOTO_SIZES);
+
 
     /* =====================================
        CONSTANTS & DYNAMIC PHOTO DIMENSIONS
@@ -50,10 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const uploadZone = document.getElementById("uploadZone");
 
     // Debug: Check if critical elements exist
-    console.log('Critical elements check:');
-    console.log('input:', !!input);
-    console.log('preview:', !!preview);
-    console.log('uploadZone:', !!uploadZone);
+
+
+
+
     
     if (!input || !preview || !uploadZone) {
         console.error('Missing critical elements!');
@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentCropModalUrl = null; // Store object URL for modal cleanup
     let currentBgRemovalIndex = null; // Track which file is being processed for BG removal
     let currentBgRemovalDataUrl = null; // Store image data URL for BG removal
+    let currentPhotoSize = 'passport'; // Track current photo size for crop modal
 
     /* =====================================
        FILE MANAGEMENT
@@ -196,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
        PHOTO SIZE SELECTION HANDLER
     ===================================== */
     function updatePhotoSize() {
-        let currentPhotoSize = defaultPhotoSize.value;
+        currentPhotoSize = defaultPhotoSize.value;
         let customWidth, customHeight;
         
         if (currentPhotoSize === 'custom') {
@@ -229,18 +230,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         calculateGrid();
-        console.log(`Photo size updated: ${PHOTO_W}×${PHOTO_H} cm`);
+
     }
 
     defaultPhotoSize.addEventListener('change', updatePhotoSize);
     customWidthInput.addEventListener('input', updatePhotoSize);
     customHeightInput.addEventListener('input', updatePhotoSize);
 
-    console.log("Event listeners attached for photo size changes");
-    console.log("defaultPhotoSize:", defaultPhotoSize);
-    console.log("customSizeContainer:", customSizeContainer);
-    console.log("customWidthInput:", customWidthInput);
-    console.log("customHeightInput:", customHeightInput);
+
+
+
+
+
     
     // Initialize photo size
     updatePhotoSize();
@@ -306,7 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
        FILE MANAGEMENT FUNCTIONS
     ===================================== */
     function addFiles(newFiles) {
-        console.log('addFiles called with:', newFiles.length, 'files');
+
         newFiles.forEach(file => {
             // Check file size
             const maxSize = 10 * 1024 * 1024; // 10MB
@@ -318,19 +319,19 @@ document.addEventListener("DOMContentLoaded", () => {
             // Check if file already exists (by name and size)
             const exists = fileList.some(f => f.name === file.name && f.size === file.size);
             if (exists) {
-                console.log('File already exists, skipping:', file.name);
+
                 return; // Skip duplicate files
             }
 
             fileList.push(file);
-            console.log('File added to list:', file.name, 'Total files:', fileList.length);
+
 
             // Read file and store data URL
             const reader = new FileReader();
             reader.onload = e => {
-                console.log('File loaded:', file.name);
+
                 fileDataMap.set(file.name + file.size, e.target.result);
-                console.log('Calling renderPreview, fileDataMap size:', fileDataMap.size);
+
                 renderPreview();
                 updateFileInput();
             };
@@ -363,8 +364,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderPreview() {
-        console.log('renderPreview called, fileList length:', fileList.length);
-        console.log('preview element:', preview);
+
+
         
         // Clean up previous object URLs
         objectUrlMap.forEach(url => URL.revokeObjectURL(url));
@@ -372,22 +373,22 @@ document.addEventListener("DOMContentLoaded", () => {
         
         preview.innerHTML = "";
         fileList.forEach((file, index) => {
-            console.log(`Processing file ${index}:`, file.name);
+
             // Use cropped image first, then background-removed, then original
             let dataUrl;
             if (croppedFilesMap.has(index)) {
                 const objectUrl = URL.createObjectURL(croppedFilesMap.get(index));
                 objectUrlMap.set(index, objectUrl);
                 dataUrl = objectUrl;
-                console.log('Using cropped image for:', file.name);
+
             } else if (bgRemovedFilesMap.has(index)) {
                 const objectUrl = URL.createObjectURL(bgRemovedFilesMap.get(index));
                 objectUrlMap.set(index, objectUrl);
                 dataUrl = objectUrl;
-                console.log('Using background-removed image for:', file.name);
+
             } else {
                 dataUrl = fileDataMap.get(file.name + file.size);
-                console.log('Using original image for:', file.name, 'dataUrl exists:', !!dataUrl);
+
             }
             if (!dataUrl) {
                 console.warn('No dataUrl for file:', file.name, 'skipping');
@@ -468,11 +469,11 @@ document.addEventListener("DOMContentLoaded", () => {
        FILE INPUT CHANGE HANDLER
     ===================================== */
     input.addEventListener("change", (e) => {
-        console.log('Input change event fired');
-        console.log('Files selected:', e.target.files ? e.target.files.length : 0);
+
+
         // Prevent double-triggering by checking if files are already being processed
         if (e.target.files && e.target.files.length > 0) {
-            console.log('Processing files from input');
+
             addFiles(Array.from(e.target.files));
             // Reset input value to allow selecting the same file again if needed
             e.target.value = '';
@@ -640,16 +641,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     minCropBoxWidth: 100,
                     minCropBoxHeight: 100,
                     ready: function() {
-                        console.log('Cropper initialized and ready');
+
                         // Enable Apply button when cropper is ready
                         cropApply.disabled = false;
                         cropApply.textContent = 'Apply Crop';
                     },
                     cropstart: function() {
-                        console.log('Crop started');
+
                     },
                     cropend: function() {
-                        console.log('Crop ended');
+
                     }
                 });
             } catch (error) {
@@ -868,11 +869,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         try {
             const bgColor = bgRemovalColorPicker.value;
-            console.log('Calling background removal API with color:', bgColor);
+
             
             // Call API for AI-powered background removal
             const processedDataUrl = await removeBackgroundAPI(currentBgRemovalDataUrl, bgColor);
-            console.log('Background removal complete');
+
 
             // Convert data URL to blob
             const response = await fetch(processedDataUrl);

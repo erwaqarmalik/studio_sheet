@@ -269,13 +269,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const sessionId = this.dataset.session;
             
             if (confirm('Are you sure you want to delete this generation? You can restore it later from the Deleted tab.')) {
-                const reason = prompt('Optional: Enter reason for deletion (or leave empty):');
-                
                 const formData = new FormData();
                 formData.append('csrfmiddlewaretoken', csrfToken);
-                if (reason) {
-                    formData.append('reason', reason);
-                }
                 
                 fetch(`/api/delete/${generationId}/`, {
                     method: 'POST',
@@ -308,13 +303,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const sessionId = this.dataset.session;
             
             if (confirm('Are you sure you want to restore this generation?')) {
-                const reason = prompt('Optional: Enter reason for restoration (or leave empty):');
-                
                 const formData = new FormData();
                 formData.append('csrfmiddlewaretoken', csrfToken);
-                if (reason) {
-                    formData.append('reason', reason);
-                }
                 
                 fetch(`/api/restore/${generationId}/`, {
                     method: 'POST',
