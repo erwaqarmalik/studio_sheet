@@ -119,7 +119,9 @@
                     <div class="card-body">
                         {% for item in activity_breakdown %}
                             <div class="d-flex justify-content-between mb-2">
-                                <span class="text-capitalize">{{ item.action_type }}</span>
+                                <span class="text-capitalize">
+                                    {% if item.action_type == 'login' %}Login{% elif item.action_type == 'login_failed' %}Failed Login{% elif item.action_type == 'delete' %}Deleted{% elif item.action_type == 'download' %}Downloaded{% elif item.action_type == 'admin_action' %}Admin Action{% elif item.action_type == 'system' %}System{% else %}{{ item.action_type }}{% endif %}
+                                </span>
                                 <span class="badge bg-info">{{ item.count }}</span>
                             </div>
                         {% empty %}
@@ -232,7 +234,7 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary text-capitalize">
-                                                {{ activity.action_type|replace:"_":" " }}
+                                                {{ activity.get_action_type_display }}
                                             </span>
                                         </td>
                                         <td>
