@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.db.models import Count, Sum
@@ -239,6 +240,123 @@ def admin_dashboard(request: HttpRequest) -> HttpResponse:
     }
     
     return render(request, 'generator/admin_dashboard.html', context)
+
+
+@login_required
+def create_user(request: HttpRequest) -> HttpResponse:
+    """
+    Create new user account (admin only).
+    
+    Args:
+        request: Django HTTP request
+    
+    Returns:
+        Rendered user creation form or redirect on success
+    """
+    # Check if user is admin/staff
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to create users.')
+        return redirect('generator:index')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+        is_staff = request.POST.get('is_staff') == 'on'
+        
+        # Validation
+        errors = []
+        
+        if not username:
+            errors.append('Username is required.')
+        elif User.objects.filter(username=username).exists():
+            errors.append('Username already exists.')
+        
+        if not first_name:
+            errors.append('First name is required.')
+        
+        if not last_name:
+            errors.append('Last name is required.')
+        
+        if not email:
+            errors.append('Email is required.')
+        elif User.objects.filter(email=email).exists():
+            errors.append('Email already exists.')
+        
+        if not password:
+            errors.append('Password is required.')
+        elif len(password) < 8:
+            errors.append('Password must be at least 8 characters long.')
+        
+        if password != password_confirm:
+            errors.append('Passwords do not match.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            try:
+                # Create user
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    is_staff=is_staff,
+                )
+                
+                # Log admin activity
+                AdminActivity.log_activity(
+                    admin_user=request.user,
+                    action_type='user_created',
+                    description=f'Created user: {username} ({first_name} {last_name})',
+                    metadata={'username': username, 'is_staff': is_staff}
+                )
+                
+                messages.success(request, f'User "{username}" created successfully!')
+                return redirect('generator:manage_users')
+            except Exception as e:
+                messages.error(request, f'Error creating user: {str(e)}')
+    
+    return render(request, 'generator/create_user.html')
+
+
+@login_required
+def manage_users(request: HttpRequest) -> HttpResponse:
+    """
+    Manage users list (admin only).
+    
+    Args:
+        request: Django HTTP request
+    
+    Returns:
+        Rendered user management page
+    """
+    # Check if user is admin/staff
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to manage users.')
+        return redirect('generator:index')
+    
+    users = User.objects.all().order_by('-date_joined')
+    
+    # Calculate stats
+    stats = {
+        'total_users': users.count(),
+        'admin_users': users.filter(is_staff=True).count(),
+        'active_users': users.filter(is_active=True).count(),
+        'logged_in_users': users.filter(last_login__isnull=False).count(),
+    }
+    
+    context = {
+        'users': users,
+        'stats': stats,
+    }
+    
+    return render(request, 'generator/manage_users.html', context)
 
 
 @login_required
