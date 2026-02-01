@@ -310,11 +310,16 @@ def create_user(request: HttpRequest) -> HttpResponse:
                 )
                 
                 # Log admin activity
-                AdminActivity.log_activity(
-                    admin_user=request.user,
-                    action_type='user_created',
-                    description=f'Created user: {username} ({first_name} {last_name})',
-                    metadata={'username': username, 'is_staff': is_staff}
+                AdminActivity.objects.create(
+                    action_type='admin_action',
+                    user=request.user,
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    details={
+                        'action': 'user_created',
+                        'description': f'Created user: {username} ({first_name} {last_name})',
+                        'username': username,
+                        'is_staff': is_staff
+                    }
                 )
                 
                 messages.success(request, f'User "{username}" created successfully!')
