@@ -35,11 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =====================================
        CONSTANTS & DYNAMIC PHOTO DIMENSIONS
     ===================================== */
-    let PHOTO_W = CONFIG.photo_width_cm;
-    let PHOTO_H = CONFIG.photo_height_cm;
-    let currentPhotoSize = 'passport_35x45';
-    let customWidth = null;
-    let customHeight = null;
+    let PHOTO_W;
+    let PHOTO_H;
 
     /* =====================================
        ELEMENTS
@@ -199,7 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
        PHOTO SIZE SELECTION HANDLER
     ===================================== */
     function updatePhotoSize() {
-        currentPhotoSize = defaultPhotoSize.value;
+        let currentPhotoSize = defaultPhotoSize.value;
+        let customWidth, customHeight;
         
         if (currentPhotoSize === 'custom') {
             // Show custom size inputs

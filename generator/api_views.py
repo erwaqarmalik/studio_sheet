@@ -1,7 +1,6 @@
 """
 API views for background removal and other image processing.
 """
-import os
 import io
 import base64
 import logging
