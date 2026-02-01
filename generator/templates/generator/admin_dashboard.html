@@ -1,0 +1,350 @@
+{% extends 'generator/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    {% if not user.is_staff %}
+        <div class="alert alert-danger">
+            <strong>Access Denied:</strong> You do not have permission to access this dashboard.
+        </div>
+        <a href="{% url 'generator:index' %}" class="btn btn-primary">Back to Home</a>
+    {% else %}
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
+                <p class="text-muted">System monitoring and maintenance control panel</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <small class="text-muted">Last updated: <span id="update-time">now</span></small>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-left-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Users</h6>
+                                <h3>{{ stats.total_users }}</h3>
+                            </div>
+                            <div class="text-primary" style="font-size: 2.5rem;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card border-left-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Active Generations</h6>
+                                <h3>{{ stats.active_generations }}</h3>
+                            </div>
+                            <div class="text-success" style="font-size: 2.5rem;">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card border-left-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Soft-Deleted</h6>
+                                <h3>{{ stats.deleted_generations }}</h3>
+                            </div>
+                            <div class="text-warning" style="font-size: 2.5rem;">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card border-left-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Size</h6>
+                                <h3>{{ stats.total_files_mb|floatformat:1 }} MB</h3>
+                            </div>
+                            <div class="text-info" style="font-size: 2.5rem;">
+                                <i class="fas fa-hdd"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-calendar-today"></i> Today's Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">New Generations</p>
+                                <h4>{{ stats.today_generations }}</h4>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">System Activities</p>
+                                <h4>{{ stats.activity_today }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Activity Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for item in activity_breakdown %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-capitalize">{{ item.action_type }}</span>
+                                <span class="badge bg-info">{{ item.count }}</span>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">No activity data yet</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Maintenance -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-cogs"></i> Maintenance Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Auto-Delete Days Threshold</label>
+                            <p class="form-control-plaintext">
+                                <strong>{{ settings.auto_delete_days }} days</strong>
+                            </p>
+                            <small class="text-muted">Records soft-deleted before this period will be permanently removed</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Cleanup Status</label>
+                            <p>
+                                {% if settings.cleanup_enabled %}
+                                    <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Disabled</span>
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        {% if settings.last_cleanup %}
+                            <div class="mb-3">
+                                <label class="form-label">Last Cleanup</label>
+                                <p class="form-control-plaintext">
+                                    {{ settings.last_cleanup|date:"M d, Y H:i" }}
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Cleanup Statistics</label>
+                            <ul class="list-unstyled">
+                                <li><strong>Total Records Deleted:</strong> {{ settings.total_deleted_records }}</li>
+                                <li><strong>Total Size Freed:</strong> {{ settings.total_deleted_size_mb|floatformat:2 }} MB</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-tools"></i> Cleanup Operations</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Manually trigger cleanup or run the management command:
+                        </p>
+                        <div class="alert alert-info" style="font-size: 0.85rem;">
+                            <code>python manage.py cleanup_soft_deleted --days=30</code>
+                        </div>
+
+                        <div class="alert alert-warning" style="font-size: 0.85rem;">
+                            <strong>Options:</strong><br>
+                            --days=N (override system setting)<br>
+                            --dry-run (preview what would be deleted)<br>
+                            --force (skip confirmation)
+                        </div>
+
+                        <p class="text-muted small">
+                            <i class="fas fa-info-circle"></i>
+                            Manual cleanup from web UI is available via Django admin.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> Recent Activities (Last 50)</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Action Type</th>
+                                    <th>User</th>
+                                    <th>IP Address</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activities %}
+                                    <tr>
+                                        <td>
+                                            <small>{{ activity.timestamp|date:"M d, Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary text-capitalize">
+                                                {{ activity.action_type|replace:"_":" " }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if activity.user %}
+                                                {{ activity.user.username }}
+                                            {% else %}
+                                                <span class="text-muted">System</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if activity.ip_address %}
+                                                <code style="font-size: 0.8rem;">{{ activity.ip_address }}</code>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if activity.details %}
+                                                <small class="text-muted">
+                                                    {{ activity.details|truncatewords:10 }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">
+                                            No activities recorded yet
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Users Today -->
+        {% if recent_users %}
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-star"></i> Top Users Today</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                {% for user_data in recent_users %}
+                                    <li class="d-flex justify-content-between mb-2">
+                                        <span>{{ user_data.user__username }}</span>
+                                        <span class="badge bg-info">{{ user_data.count }} generations</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Admin Links -->
+        <div class="row mt-4 mb-4">
+            <div class="col-12">
+                <div class="card border-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Admin Panel Links</h6>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-cog"></i> Django Admin
+                            </a>
+                            <a href="{% url 'admin:generator_adminactivity_changelist' %}" class="btn btn-sm btn-outline-info" target="_blank">
+                                <i class="fas fa-history"></i> View All Activities
+                            </a>
+                            <a href="{% url 'admin:generator_systemmaintenance_changelist' %}" class="btn btn-sm btn-outline-warning" target="_blank">
+                                <i class="fas fa-sliders-h"></i> Maintenance Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .border-left-primary {
+        border-left: 4px solid #0d6efd;
+    }
+    .border-left-success {
+        border-left: 4px solid #198754;
+    }
+    .border-left-warning {
+        border-left: 4px solid #ffc107;
+    }
+    .border-left-info {
+        border-left: 4px solid #0dcaf0;
+    }
+    .border-light {
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+<script>
+    // Update "now" timestamp
+    function updateTime() {
+        const timeSpan = document.getElementById('update-time');
+        const now = new Date();
+        timeSpan.textContent = now.toLocaleTimeString();
+    }
+    
+    updateTime();
+    setInterval(updateTime, 30000); // Update every 30 seconds
+</script>
+{% endblock %}

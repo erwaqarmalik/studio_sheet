@@ -9,9 +9,11 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.db.models import Count, Sum
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
+from django.db.models import Q
 from typing import Optional
 
-from .models import PhotoGeneration, DeletionHistory
+from .models import PhotoGeneration, DeletionHistory, AdminActivity, SystemMaintenance
 
 
 def user_login(request: HttpRequest) -> HttpResponse:
@@ -149,75 +151,91 @@ def soft_delete_generation(request: HttpRequest, generation_id: int) -> JsonResp
     reason = request.POST.get('reason', 'User requested deletion')
     generation.delete(deleted_by=request.user, reason=reason)
     
-    return JsonResponse({
-        'success': True,
-        'message': 'Record deleted successfully. You can restore it from the deleted items view.'
-    })
-
-
-@login_required
-@require_http_methods(["POST"])
-def restore_generation(request: HttpRequest, generation_id: int) -> JsonResponse:
-    """
-    Restore a soft-deleted photo generation record.
-    
-    Args:
-        request: Django HTTP request
-        generation_id: ID of the generation to restore
-    
-    Returns:
-        JSON response with success status
-    """
-    generation = get_object_or_404(PhotoGeneration.all_objects, pk=generation_id, user=request.user)
-    
-    if not generation.is_deleted():
-        return JsonResponse({'success': False, 'error': 'Record is not deleted'}, status=400)
-    
-    reason = request.POST.get('reason', 'User requested restoration')
-    generation.restore(restored_by=request.user, reason=reason)
+    # Log to AdminActivity
+    try:
+        AdminActivity.objects.create(
+            action_type='delete',
+            user=request.user,
+            ip_address=get_client_ip(request),
+            details={
+                'generation_id': generation_id,
+                'output_type': generation.output_type,
+                'reason': reason,
+            }
+        )
+    except Exception as e:
+        # Log error but don't fail the delete
+        pass
     
     return JsonResponse({
         'success': True,
-        'message': 'Record restored successfully.'
+        'message': 'Record deleted successfully.'
     })
 
 
+def get_client_ip(request):
+    """Get client IP address from request."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+# NOTE: restore_generation endpoint removed - admin-only restoration via Django admin panel
+# NOTE: deletion_history_view removed - users no longer see deletion history
+
+
 @login_required
-def deletion_history_view(request: HttpRequest) -> HttpResponse:
+def admin_dashboard(request: HttpRequest) -> HttpResponse:
     """
-    View deletion history for the current user.
+    Admin dashboard with live request monitoring and system statistics.
     
     Args:
         request: Django HTTP request
     
     Returns:
-        Rendered deletion history page
+        Rendered admin dashboard page
     """
-    # Get user's generation IDs
-    user_generation_ids = PhotoGeneration.all_objects.filter(
-        user=request.user
-    ).values_list('id', flat=True)
+    # Check if user is admin/staff
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to access the admin dashboard.')
+        return redirect('generator:index')
     
-    # Get deletion history for user's generations (don't slice yet)
-    history_queryset = DeletionHistory.objects.filter(
-        model_name='PhotoGeneration',
-        object_id__in=user_generation_ids
-    ).select_related('performed_by').order_by('-performed_at')
+    # Get system maintenance settings
+    settings = SystemMaintenance.get_settings()
     
-    # Calculate statistics before slicing
+    # Get recent activities (last 50)
+    recent_activities = AdminActivity.objects.all()[:50]
+    
+    # Calculate statistics
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    
     stats = {
-        'total_deletions': history_queryset.filter(action='delete').count(),
-        'total_restorations': history_queryset.filter(action='restore').count(),
-        'total_hard_deletes': history_queryset.filter(action='hard_delete').count(),
-        'total_operations': history_queryset.count(),
+        'total_users': PhotoGeneration.objects.values('user').distinct().count(),
+        'total_generations': PhotoGeneration.objects.count(),
+        'active_generations': PhotoGeneration.objects.filter(deleted_at__isnull=True).count(),
+        'deleted_generations': PhotoGeneration.all_objects.filter(deleted_at__isnull=False).count(),
+        'total_files_mb': PhotoGeneration.objects.aggregate(Sum('file_size_mb'))['file_size_mb__sum'] or 0,
+        'today_generations': PhotoGeneration.objects.filter(created_at__date=today.date()).count(),
+        'activity_today': AdminActivity.objects.filter(timestamp__date=today.date()).count(),
     }
     
-    # Now slice for display
-    history_records = history_queryset[:100]
+    # Activity breakdown
+    activity_breakdown = AdminActivity.objects.values('action_type').annotate(count=Count('action_type'))
+    
+    # Recent users who generated photos (today)
+    recent_users = PhotoGeneration.objects.filter(
+        created_at__date=today.date()
+    ).values('user__username').annotate(count=Count('id')).order_by('-count')[:10]
     
     context = {
-        'history_records': history_records,
+        'settings': settings,
+        'recent_activities': recent_activities,
         'stats': stats,
+        'activity_breakdown': list(activity_breakdown),
+        'recent_users': list(recent_users),
     }
     
-    return render(request, 'generator/deletion_history.html', context)
+    return render(request, 'generator/admin_dashboard.html', context)

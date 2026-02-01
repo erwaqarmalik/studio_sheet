@@ -6,7 +6,8 @@ from django.urls import reverse
 from django.utils import timezone
 from .models import (
     UserProfile, PhotoGeneration, UserRateLimit, 
-    GenerationAudit, FeatureUsage, PhotoConfiguration, DeletionHistory
+    GenerationAudit, FeatureUsage, PhotoConfiguration, DeletionHistory,
+    AdminActivity, SystemMaintenance
 )
 
 
@@ -236,3 +237,61 @@ class DeletionHistoryAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Prevent deletion of history records."""
         return False
+
+
+class AdminActivityAdmin(admin.ModelAdmin):
+    """Admin interface for AdminActivity monitoring."""
+    list_display = ('timestamp', 'action_type', 'user', 'ip_address', 'details_preview')
+    list_filter = ('action_type', 'timestamp', 'user')
+    search_fields = ('user__username', 'ip_address')
+    readonly_fields = ('timestamp', 'details')
+    date_hierarchy = 'timestamp'
+    
+    def details_preview(self, obj):
+        """Show preview of details JSON."""
+        if obj.details:
+            preview = str(obj.details)[:50]
+            return f"{preview}..." if len(str(obj.details)) > 50 else preview
+        return "-"
+    details_preview.short_description = 'Details'
+    
+    def has_add_permission(self, request):
+        """Prevent manual creation of activity entries."""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of activity logs."""
+        return False
+
+
+class SystemMaintenanceAdmin(admin.ModelAdmin):
+    """Admin interface for SystemMaintenance settings."""
+    list_display = ('auto_delete_days', 'cleanup_enabled', 'last_cleanup', 'stats')
+    fields = (
+        'auto_delete_days',
+        'cleanup_enabled',
+        'last_cleanup',
+        'total_deleted_records',
+        'total_deleted_size_mb',
+    )
+    readonly_fields = ('last_cleanup', 'total_deleted_records', 'total_deleted_size_mb')
+    
+    def stats(self, obj):
+        """Show statistics summary."""
+        return format_html(
+            '<strong>Records:</strong> {} | <strong>Size:</strong> {:.2f} MB',
+            obj.total_deleted_records,
+            obj.total_deleted_size_mb
+        )
+    stats.short_description = 'Statistics'
+    
+    def has_add_permission(self, request):
+        """Only allow one maintenance settings object."""
+        return SystemMaintenance.objects.count() == 0
+    
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of maintenance settings."""
+        return False
+
+
+# Register new admin interfaces (User, PhotoGeneration, GenerationAudit already registered above)
