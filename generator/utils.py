@@ -264,6 +264,7 @@ def generate_pdf(
     output_dir: str,
     photo_width_cm: float = None,
     photo_height_cm: float = None,
+    cut_line_style: str = "full",
 ) -> str:
     """
     Generate a PDF file with photos arranged in a grid.
@@ -280,6 +281,7 @@ def generate_pdf(
         output_dir: Output directory path
         photo_width_cm: Photo width in cm (default: 3.5 cm)
         photo_height_cm: Photo height in cm (default: 4.5 cm)
+        cut_line_style: Style of cut lines - "full" for complete lines or "crosshair" for registration marks
     
     Returns:
         Path to the generated PDF file
@@ -361,31 +363,74 @@ def generate_pdf(
 
             slot += 1
 
-    # Draw cut lines in the gap between photos (rows and columns)
+    # Draw cut lines based on style
     if cut_lines and (rows > 1 or cols > 1):
-        c.setStrokeColorRGB(0.4, 0.4, 0.4)  # Medium gray
-        c.setLineWidth(0.2)
-        c.setDash([3, 2])  # Elegant dashed pattern
-        
-        # Horizontal cut lines between rows (in the gap)
-        if rows > 1:
-            for row in range(1, rows):
-                # Draw line in the middle of the gap between rows
-                y_line = paper_h_pt - ((margin_cm + offset_y_cm + row * photo_height_cm + (row - 0.5) * row_gap_cm) * cm)
-                x_start = (margin_cm + offset_x_cm) * cm
-                x_end = (margin_cm + offset_x_cm + grid_width_cm) * cm
-                c.line(x_start, y_line, x_end, y_line)
-        
-        # Vertical cut lines between columns (in the gap)
-        if cols > 1:
-            for col in range(1, cols):
-                # Draw line in the middle of the gap between columns
-                x_line = (margin_cm + offset_x_cm + col * photo_width_cm + (col - 0.5) * col_gap_cm) * cm
-                y_start = paper_h_pt - ((margin_cm + offset_y_cm) * cm)
-                y_end = paper_h_pt - ((margin_cm + offset_y_cm + grid_height_cm) * cm)
-                c.line(x_line, y_start, x_line, y_end)
-        
-        c.setDash()  # Reset to solid line
+        if cut_line_style == "crosshair":
+            # Professional registration marks (crosshairs)
+            mark_size = 0.5 * cm  # Size of crosshair marks
+            c.setLineWidth(0.5)
+            c.setDash([3, 2])  # Dashed pattern
+            
+            # Draw crosshairs at intersections
+            for row in range(rows + 1):
+                for col in range(cols + 1):
+                    # Skip the four absolute corners
+                    if (row == 0 or row == rows) and (col == 0 or col == cols):
+                        continue
+                    
+                    # Calculate position
+                    if row == 0:
+                        # Top edge - place crosshair above photos
+                        y_pos = paper_h_pt - ((margin_cm + offset_y_cm - 0.3) * cm)
+                    elif row == rows:
+                        # Bottom edge - place crosshair below photos
+                        y_pos = paper_h_pt - ((margin_cm + offset_y_cm + grid_height_cm + 0.3) * cm)
+                    else:
+                        # Between photos - in the gap center
+                        y_pos = paper_h_pt - ((margin_cm + offset_y_cm + row * photo_height_cm + (row - 0.5) * row_gap_cm) * cm)
+                    
+                    if col == 0:
+                        # Left edge - place crosshair left of photos
+                        x_pos = ((margin_cm + offset_x_cm - 0.3) * cm)
+                    elif col == cols:
+                        # Right edge - place crosshair right of photos
+                        x_pos = ((margin_cm + offset_x_cm + grid_width_cm + 0.3) * cm)
+                    else:
+                        # Between photos - in the gap center
+                        x_pos = (margin_cm + offset_x_cm + col * photo_width_cm + (col - 0.5) * col_gap_cm) * cm
+                    
+                    # Draw horizontal line in blue
+                    c.setStrokeColorRGB(0.0, 0.4, 0.8)  # Blue
+                    c.line(x_pos - mark_size, y_pos, x_pos + mark_size, y_pos)
+                    
+                    # Draw vertical line in red
+                    c.setStrokeColorRGB(0.8, 0.0, 0.2)  # Red
+                    c.line(x_pos, y_pos - mark_size, x_pos, y_pos + mark_size)
+            
+            c.setDash()  # Reset dash pattern
+        else:
+            # Full cut lines (default)
+            c.setStrokeColorRGB(0.4, 0.4, 0.4)
+            c.setLineWidth(0.2)
+            c.setDash([3, 2])
+            
+            # Horizontal cut lines
+            if rows > 1:
+                for row in range(1, rows):
+                    y_line = paper_h_pt - ((margin_cm + offset_y_cm + row * photo_height_cm + (row - 0.5) * row_gap_cm) * cm)
+                    x_start = (margin_cm + offset_x_cm) * cm
+                    x_end = (margin_cm + offset_x_cm + grid_width_cm) * cm
+                    c.line(x_start, y_line, x_end, y_line)
+            
+            # Vertical cut lines
+            if cols > 1:
+                for col in range(1, cols):
+                    x_line = (margin_cm + offset_x_cm + col * photo_width_cm + (col - 0.5) * col_gap_cm) * cm
+                    y_start = paper_h_pt - ((margin_cm + offset_y_cm) * cm)
+                    y_end = paper_h_pt - ((margin_cm + offset_y_cm + grid_height_cm) * cm)
+                    c.line(x_line, y_start, x_line, y_end)
+            
+            c.setDash()
 
     c.save()
     return output_path
@@ -401,28 +446,7 @@ def zip_files(files: List[str], output_dir: str) -> str:
     
     Returns:
         Path to the created ZIP file
-    
-    Raises:
-        IOError: If output directory doesn't exist or ZIP cannot be created
     """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    zip_name = f"passport_photos_{timestamp}.zip"
-    zip_path = os.path.join(output_dir, zip_name)
-
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for file in files:
-            if os.path.exists(file):
-                zipf.write(file, arcname=os.path.basename(file))
-
-    return zip_path
-
-
-# ==================================================
-# JPEG GENERATOR
-# ==================================================
 def generate_jpeg(
     photos: List[str],
     copies_map: Dict[str, int],
@@ -435,6 +459,7 @@ def generate_jpeg(
     output_dir: str,
     photo_width_cm: float = None,
     photo_height_cm: float = None,
+    cut_line_style: str = "full",
 ) -> List[str]:
     """
     Generate JPEG files with photos arranged in a grid.
@@ -451,6 +476,7 @@ def generate_jpeg(
         output_dir: Output directory path
         photo_width_cm: Photo width in cm (default: 3.5 cm)
         photo_height_cm: Photo height in cm (default: 4.5 cm)
+        cut_line_style: Style of cut lines - "full" for complete lines or "crosshair" for registration marks
     
     Returns:
         List of paths to the generated JPEG files
@@ -558,47 +584,92 @@ def generate_jpeg(
                 idx += 1
 
         # Draw cut lines after all images are pasted
-        if cut_lines and photo_positions:
-            draw = ImageDraw.Draw(page)
-            for x, y, w, h in photo_positions:
-                draw_cut_lines_img(draw, x, y, w, h)
-        
-        # Draw cut lines in the gap between photos (rows and columns)
         if cut_lines and (rows > 1 or cols > 1):
             draw = ImageDraw.Draw(page)
-            dash_length = 8
-            gap_length = 4
-            line_color = (100, 100, 100)  # Medium gray
             
-            # Horizontal cut lines between rows (in the gap)
-            if rows > 1:
-                for row in range(1, rows):
-                    # Draw line in the middle of the gap between rows
-                    y_line = int(margin_px + offset_y_px + row * photo_h_px + (row - 0.5) * row_gap_px)
-                    x_start = int(margin_px + offset_x_px)
-                    x_end = int(margin_px + offset_x_px + grid_width_px)
-                    
-                    # Draw dashed line
-                    x_current = x_start
-                    while x_current < x_end:
-                        x_next = min(x_current + dash_length, x_end)
-                        draw.line([(x_current, y_line), (x_next, y_line)], fill=line_color, width=1)
-                        x_current = x_next + gap_length
-            
-            # Vertical cut lines between columns (in the gap)
-            if cols > 1:
-                for col in range(1, cols):
-                    # Draw line in the middle of the gap between columns
-                    x_line = int(margin_px + offset_x_px + col * photo_w_px + (col - 0.5) * col_gap_px)
-                    y_start = int(margin_px + offset_y_px)
-                    y_end = int(margin_px + offset_y_px + grid_height_px)
-                    
-                    # Draw dashed line
-                    y_current = y_start
-                    while y_current < y_end:
-                        y_next = min(y_current + dash_length, y_end)
-                        draw.line([(x_line, y_current), (x_line, y_next)], fill=line_color, width=1)
-                        y_current = y_next + gap_length
+            if cut_line_style == "crosshair":
+                # Professional registration marks (crosshairs)
+                mark_size = int(cm_to_px(0.5))
+                dash_length = 8
+                gap_length = 4
+                offset_edge = int(cm_to_px(0.3))  # Offset for edge crosshairs
+                
+                # Draw crosshairs at intersections
+                for row in range(rows + 1):
+                    for col in range(cols + 1):
+                        # Skip the four absolute corners
+                        if (row == 0 or row == rows) and (col == 0 or col == cols):
+                            continue
+                        
+                        # Calculate position
+                        if row == 0:
+                            # Top edge - place crosshair above photos
+                            y_pos = int(margin_px + offset_y_px - offset_edge)
+                        elif row == rows:
+                            # Bottom edge - place crosshair below photos
+                            y_pos = int(margin_px + offset_y_px + grid_height_px + offset_edge)
+                        else:
+                            # Between photos - in the gap center
+                            y_pos = int(margin_px + offset_y_px + row * photo_h_px + (row - 0.5) * row_gap_px)
+                        
+                        if col == 0:
+                            # Left edge - place crosshair left of photos
+                            x_pos = int(margin_px + offset_x_px - offset_edge)
+                        elif col == cols:
+                            # Right edge - place crosshair right of photos
+                            x_pos = int(margin_px + offset_x_px + grid_width_px + offset_edge)
+                        else:
+                            # Between photos - in the gap center
+                            x_pos = int(margin_px + offset_x_px + col * photo_w_px + (col - 0.5) * col_gap_px)
+                        
+                        # Draw dashed horizontal crosshair line in blue
+                        blue_color = (0, 102, 204)  # Blue
+                        x_current = x_pos - mark_size
+                        x_end = x_pos + mark_size
+                        while x_current < x_end:
+                            x_next = min(x_current + dash_length, x_end)
+                            draw.line([(x_current, y_pos), (x_next, y_pos)], fill=blue_color, width=2)
+                            x_current = x_next + gap_length
+                        
+                        # Draw dashed vertical crosshair line in red
+                        red_color = (204, 0, 51)  # Red
+                        y_current = y_pos - mark_size
+                        y_end = y_pos + mark_size
+                        while y_current < y_end:
+                            y_next = min(y_current + dash_length, y_end)
+                            draw.line([(x_pos, y_current), (x_pos, y_next)], fill=red_color, width=2)
+                            y_current = y_next + gap_length
+            else:
+                # Full cut lines (default)
+                dash_length = 8
+                gap_length = 4
+                line_color = (100, 100, 100)
+                
+                # Horizontal cut lines
+                if rows > 1:
+                    for row in range(1, rows):
+                        y_line = int(margin_px + offset_y_px + row * photo_h_px + (row - 0.5) * row_gap_px)
+                        x_start = int(margin_px + offset_x_px)
+                        x_end = int(margin_px + offset_x_px + grid_width_px)
+                        
+                        x_current = x_start
+                        while x_current < x_end:
+                            x_next = min(x_current + dash_length, x_end)
+                            draw.line([(x_current, y_line), (x_next, y_line)], fill=line_color, width=1)
+                            x_current = x_next + gap_length
+                
+                # Vertical cut lines
+                if cols > 1:
+                    for col in range(1, cols):
+                        x_line = int(margin_px + offset_x_px + col * photo_w_px + (col - 0.5) * col_gap_px)
+                        y_start = int(margin_px + offset_y_px)
+                        y_end = int(margin_px + offset_y_px + grid_height_px)
+                        
+                        y_current = y_start
+                        while y_current < y_end:
+                            y_next = min(y_current + dash_length, y_end)
+                            draw.line([(x_line, y_current), (x_line, y_next)], fill=line_color, width=1)
+                            y_current = y_next + gap_length
 
         pages.append(page)
 

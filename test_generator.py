@@ -27,13 +27,14 @@ def test_pdf_generation(image_path, output_dir="test_output"):
     # Test configurations
     test_configs = [
         {
-            "name": "A4 Portrait - 2 copies with cut lines",
+            "name": "A4 Portrait - 2 copies with full cut lines",
             "paper_size": "A4",
             "orientation": "portrait",
             "margin_cm": 1.0,
             "col_gap_cm": 0.5,
             "row_gap_cm": 0.5,
             "cut_lines": True,
+            "cut_line_style": "crosshair",
             "copies": 2,
         },
         {
@@ -44,16 +45,18 @@ def test_pdf_generation(image_path, output_dir="test_output"):
             "col_gap_cm": 0.3,
             "row_gap_cm": 0.3,
             "cut_lines": False,
+            "cut_line_style": "full",
             "copies": 3,
         },
         {
-            "name": "Letter Portrait - 1 copy with cut lines",
+            "name": "Letter Portrait - 1 copy with crosshair cut lines",
             "paper_size": "Letter",
             "orientation": "portrait",
             "margin_cm": 1.0,
             "col_gap_cm": 0.5,
             "row_gap_cm": 0.5,
             "cut_lines": True,
+            "cut_line_style": "crosshair",
             "copies": 1,
         },
     ]
@@ -76,6 +79,7 @@ def test_pdf_generation(image_path, output_dir="test_output"):
                 row_gap_cm=config['row_gap_cm'],
                 cut_lines=config['cut_lines'],
                 output_dir=output_dir,
+                cut_line_style=config.get('cut_line_style', 'full'),
             )
             
             if os.path.exists(pdf_path):
@@ -107,13 +111,14 @@ def test_jpeg_generation(image_path, output_dir="test_output"):
     # Test configurations
     test_configs = [
         {
-            "name": "A4 Portrait - 4 copies with cut lines",
+            "name": "A4 Portrait - 4 copies with full cut lines",
             "paper_size": "A4",
             "orientation": "portrait",
             "margin_cm": 1.0,
             "col_gap_cm": 0.5,
             "row_gap_cm": 0.5,
             "cut_lines": True,
+            "cut_line_style": "full",
             "copies": 4,
         },
         {
@@ -124,16 +129,18 @@ def test_jpeg_generation(image_path, output_dir="test_output"):
             "col_gap_cm": 0.3,
             "row_gap_cm": 0.3,
             "cut_lines": False,
+            "cut_line_style": "full",
             "copies": 6,
         },
         {
-            "name": "A3 Portrait - 8 copies with cut lines",
+            "name": "A3 Portrait - 8 copies with crosshair cut lines",
             "paper_size": "A3",
             "orientation": "portrait",
             "margin_cm": 1.0,
             "col_gap_cm": 0.5,
             "row_gap_cm": 0.5,
             "cut_lines": True,
+            "cut_line_style": "crosshair",
             "copies": 8,
         },
     ]
@@ -156,6 +163,7 @@ def test_jpeg_generation(image_path, output_dir="test_output"):
                 row_gap_cm=config['row_gap_cm'],
                 cut_lines=config['cut_lines'],
                 output_dir=output_dir,
+                cut_line_style=config.get('cut_line_style', 'full'),
             )
             
             if jpeg_paths:
