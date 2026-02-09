@@ -352,7 +352,7 @@ def generate_pdf(
                 continue
 
             # Draw thin border around photo
-            c.setStrokeColorRGB(0.7, 0.7, 0.7)  # Light gray border
+            c.setStrokeColorRGB(0, 0, 0)  # Black border
             c.setLineWidth(0.5)
             c.rect(x, y, photo_w, photo_h, stroke=1, fill=0)
 
@@ -517,7 +517,7 @@ def generate_jpeg(
                     draw_temp = ImageDraw.Draw(page)
                     draw_temp.rectangle(
                         [int(x), int(y), int(x + photo_w_px), int(y + photo_h_px)],
-                        outline=(180, 180, 180),  # Light gray border
+                        outline=(0, 0, 0),  # Black border
                         width=2
                     )
                     
