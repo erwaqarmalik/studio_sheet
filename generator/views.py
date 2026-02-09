@@ -185,11 +185,10 @@ def index(request: HttpRequest) -> HttpResponse:
                 default=PASSPORT_CONFIG["default_row_gap_cm"]
             )
 
-            cut_lines = (
-                request.POST.get("cut_lines", "yes") == "yes"
-                if request.POST.get("cut_lines") is not None
-                else PASSPORT_CONFIG["default_cut_lines"]
-            )
+            # Handle cut line type
+            cut_line_type = request.POST.get("cut_line_type", "full")
+            cut_lines = cut_line_type != "none"
+            cut_line_style = "crosshair" if cut_line_type == "crosshair" else "full"
 
             output_type = request.POST.get(
                 "output_type",
@@ -232,6 +231,7 @@ def index(request: HttpRequest) -> HttpResponse:
                     photo_height_cm=photo_height_cm,
                     remove_bg=remove_bg,
                     bg_color=bg_color,
+                    cut_line_style=cut_line_style,
                 )
 
                 generation.task_id = task.id
@@ -260,6 +260,7 @@ def index(request: HttpRequest) -> HttpResponse:
                         output_dir=output_dir,
                         photo_width_cm=photo_width_cm,
                         photo_height_cm=photo_height_cm,
+                        cut_line_style=cut_line_style,
                     )
 
                 else:  # JPEG
@@ -275,6 +276,7 @@ def index(request: HttpRequest) -> HttpResponse:
                         output_dir=output_dir,
                         photo_width_cm=photo_width_cm,
                         photo_height_cm=photo_height_cm,
+                        cut_line_style=cut_line_style,
                     )
 
                     output_path = jpeg_files[0] if len(jpeg_files) == 1 else zip_files(jpeg_files, output_dir)

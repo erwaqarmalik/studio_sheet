@@ -44,6 +44,7 @@ def generate_photosheet_task(
     photo_height_cm,
     remove_bg,
     bg_color,
+    cut_line_style="full",
 ):
     """Generate photosheet asynchronously and update PhotoGeneration record."""
     try:
@@ -74,6 +75,7 @@ def generate_photosheet_task(
                 output_dir=output_dir,
                 photo_width_cm=photo_width_cm,
                 photo_height_cm=photo_height_cm,
+                cut_line_style=cut_line_style,
             )
         else:
             jpeg_files = generate_jpeg(
@@ -88,6 +90,7 @@ def generate_photosheet_task(
                 output_dir=output_dir,
                 photo_width_cm=photo_width_cm,
                 photo_height_cm=photo_height_cm,
+                cut_line_style=cut_line_style,
             )
             output_path = jpeg_files[0] if len(jpeg_files) == 1 else zip_files(jpeg_files, output_dir)
 
