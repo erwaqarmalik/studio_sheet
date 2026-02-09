@@ -190,6 +190,32 @@ body {
     color: #ffffff !important;
 }
 
+.btn-primary:visited,
+.btn-primary:link {
+    color: #ffffff !important;
+}
+
+/* Ensure all button sizes have white text */
+.btn-primary.btn-sm,
+.btn-primary.btn-lg {
+    color: #ffffff !important;
+}
+
+a.btn-primary,
+a.btn-primary:hover,
+a.btn-primary:active,
+a.btn-primary:focus,
+a.btn-primary:visited {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+/* Fix icon colors inside buttons */
+.btn-primary i,
+.btn-primary i.bi {
+    color: #ffffff !important;
+}
+
 .btn-success {
     padding: 14px 32px;
     font-weight: 600;
@@ -210,6 +236,19 @@ body {
 .btn-success:focus {
     background-color: #1e7e34;
     border-color: #1e7e34;
+    color: #ffffff !important;
+}
+
+a.btn-success,
+a.btn-success:hover,
+a.btn-success:active,
+a.btn-success:focus {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+.btn-success i,
+.btn-success i.bi {
     color: #ffffff !important;
 }
 
@@ -236,6 +275,19 @@ body {
     color: #ffffff !important;
 }
 
+a.btn-danger,
+a.btn-danger:hover,
+a.btn-danger:active,
+a.btn-danger:focus {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+.btn-danger i,
+.btn-danger i.bi {
+    color: #ffffff !important;
+}
+
 .btn-warning {
     padding: 14px 32px;
     font-weight: 600;
@@ -249,6 +301,19 @@ body {
 .btn-warning:hover {
     background-color: #e0a800;
     border-color: #e0a800;
+    color: #000000 !important;
+}
+
+a.btn-warning,
+a.btn-warning:hover,
+a.btn-warning:active,
+a.btn-warning:focus {
+    color: #000000 !important;
+    text-decoration: none;
+}
+
+.btn-warning i,
+.btn-warning i.bi {
     color: #000000 !important;
 }
 
@@ -282,6 +347,19 @@ body {
     color: #ffffff !important;
 }
 
+a.btn-info,
+a.btn-info:hover,
+a.btn-info:active,
+a.btn-info:focus {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+.btn-info i,
+.btn-info i.bi {
+    color: #ffffff !important;
+}
+
 .btn-secondary {
     padding: 14px 32px;
     font-weight: 600;
@@ -305,6 +383,19 @@ body {
     color: #ffffff !important;
 }
 
+a.btn-secondary,
+a.btn-secondary:hover,
+a.btn-secondary:active,
+a.btn-secondary:focus {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+.btn-secondary i,
+.btn-secondary i.bi {
+    color: #ffffff !important;
+}
+
 /* Outline buttons with better contrast */
 .btn-outline-primary {
     color: #667eea !important;
@@ -316,6 +407,19 @@ body {
     background-color: #667eea;
     border-color: #667eea;
     color: #ffffff !important;
+}
+
+a.btn-outline-primary,
+a.btn-outline-primary:visited {
+    color: #667eea !important;
+    text-decoration: none;
+}
+
+a.btn-outline-primary:hover,
+a.btn-outline-primary:active,
+a.btn-outline-primary:focus {
+    color: #ffffff !important;
+    text-decoration: none;
 }
 
 .btn-outline-success {
@@ -330,6 +434,13 @@ body {
     color: #ffffff !important;
 }
 
+a.btn-outline-success:hover,
+a.btn-outline-success:active,
+a.btn-outline-success:focus {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
 .btn-outline-danger {
     color: #dc3545 !important;
     border-color: #dc3545 !important;
@@ -340,6 +451,13 @@ body {
     background-color: #dc3545;
     border-color: #dc3545;
     color: #ffffff !important;
+}
+
+a.btn-outline-danger:hover,
+a.btn-outline-danger:active,
+a.btn-outline-danger:focus {
+    color: #ffffff !important;
+    text-decoration: none;
 }
 
 .btn-outline-warning {
@@ -354,6 +472,13 @@ body {
     color: #000000 !important;
 }
 
+a.btn-outline-warning:hover,
+a.btn-outline-warning:active,
+a.btn-outline-warning:focus {
+    color: #000000 !important;
+    text-decoration: none;
+}
+
 .btn-outline-info {
     color: #17a2b8 !important;
     border-color: #17a2b8 !important;
@@ -364,6 +489,19 @@ body {
     background-color: #17a2b8;
     border-color: #17a2b8;
     color: #ffffff !important;
+}
+
+a.btn-outline-info,
+a.btn-outline-info:visited {
+    color: #17a2b8 !important;
+    text-decoration: none;
+}
+
+a.btn-outline-info:hover,
+a.btn-outline-info:active,
+a.btn-outline-info:focus {
+    color: #ffffff !important;
+    text-decoration: none;
 }
 
 .btn-sm {

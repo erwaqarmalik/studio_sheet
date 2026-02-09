@@ -351,6 +351,11 @@ def generate_pdf(
                 # Skip corrupted images
                 continue
 
+            # Draw thin border around photo
+            c.setStrokeColorRGB(0.7, 0.7, 0.7)  # Light gray border
+            c.setLineWidth(0.5)
+            c.rect(x, y, photo_w, photo_h, stroke=1, fill=0)
+
             if cut_lines:
                 draw_cut_lines_pdf(c, x, y, photo_w, photo_h)
 
@@ -507,6 +512,14 @@ def generate_jpeg(
                     img.load()
                     page.paste(img, (int(x), int(y)))
                     img.close()
+                    
+                    # Draw thin border around photo
+                    draw_temp = ImageDraw.Draw(page)
+                    draw_temp.rectangle(
+                        [int(x), int(y), int(x + photo_w_px), int(y + photo_h_px)],
+                        outline=(180, 180, 180),  # Light gray border
+                        width=2
+                    )
                     
                     if cut_lines:
                         photo_positions.append((int(x), int(y), photo_w_px, photo_h_px))
