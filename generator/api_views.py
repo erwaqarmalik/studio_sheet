@@ -35,6 +35,8 @@ def remove_background_api(request):
     API endpoint for AI-powered background removal.
     Accepts base64 encoded image and background color, returns processed image.
     """
+    logger.info("Background removal API called")
+    
     # Check if rembg is available
     if not REMBG_AVAILABLE and not settings.CELERY_ENABLED:
         logger.error("Background removal requested but rembg is not installed")
@@ -42,6 +44,8 @@ def remove_background_api(request):
             'error': 'Background removal service is not available. Please contact support.',
             'success': False
         }, status=503)  # Service Unavailable
+    
+    logger.info(f"CELERY_ENABLED: {settings.CELERY_ENABLED}, REMBG_AVAILABLE: {REMBG_AVAILABLE}")
     
     try:
         # Get image data from request

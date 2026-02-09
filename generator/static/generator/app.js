@@ -258,7 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const response = await fetch('/api/remove-background/', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                signal: AbortSignal.timeout(120000) // 2 minute timeout
             });
             
             if (!response.ok) {
