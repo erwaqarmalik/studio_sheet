@@ -353,13 +353,39 @@ def generate_pdf(
 
             # Draw thin border around photo
             c.setStrokeColorRGB(0, 0, 0)  # Black border
-            c.setLineWidth(0.5)
+            c.setLineWidth(0.3)  # Thinner professional border
             c.rect(x, y, photo_w, photo_h, stroke=1, fill=0)
 
             if cut_lines:
                 draw_cut_lines_pdf(c, x, y, photo_w, photo_h)
 
             slot += 1
+
+    # Draw cut lines in the gap between photos (rows and columns)
+    if cut_lines and (rows > 1 or cols > 1):
+        c.setStrokeColorRGB(0.4, 0.4, 0.4)  # Medium gray
+        c.setLineWidth(0.2)
+        c.setDash([3, 2])  # Elegant dashed pattern
+        
+        # Horizontal cut lines between rows (in the gap)
+        if rows > 1:
+            for row in range(1, rows):
+                # Draw line in the middle of the gap between rows
+                y_line = paper_h_pt - ((margin_cm + offset_y_cm + row * photo_height_cm + (row - 0.5) * row_gap_cm) * cm)
+                x_start = (margin_cm + offset_x_cm) * cm
+                x_end = (margin_cm + offset_x_cm + grid_width_cm) * cm
+                c.line(x_start, y_line, x_end, y_line)
+        
+        # Vertical cut lines between columns (in the gap)
+        if cols > 1:
+            for col in range(1, cols):
+                # Draw line in the middle of the gap between columns
+                x_line = (margin_cm + offset_x_cm + col * photo_width_cm + (col - 0.5) * col_gap_cm) * cm
+                y_start = paper_h_pt - ((margin_cm + offset_y_cm) * cm)
+                y_end = paper_h_pt - ((margin_cm + offset_y_cm + grid_height_cm) * cm)
+                c.line(x_line, y_start, x_line, y_end)
+        
+        c.setDash()  # Reset to solid line
 
     c.save()
     return output_path
@@ -518,7 +544,7 @@ def generate_jpeg(
                     draw_temp.rectangle(
                         [int(x), int(y), int(x + photo_w_px), int(y + photo_h_px)],
                         outline=(0, 0, 0),  # Black border
-                        width=2
+                        width=1  # Thinner professional border
                     )
                     
                     if cut_lines:
@@ -536,6 +562,43 @@ def generate_jpeg(
             draw = ImageDraw.Draw(page)
             for x, y, w, h in photo_positions:
                 draw_cut_lines_img(draw, x, y, w, h)
+        
+        # Draw cut lines in the gap between photos (rows and columns)
+        if cut_lines and (rows > 1 or cols > 1):
+            draw = ImageDraw.Draw(page)
+            dash_length = 8
+            gap_length = 4
+            line_color = (100, 100, 100)  # Medium gray
+            
+            # Horizontal cut lines between rows (in the gap)
+            if rows > 1:
+                for row in range(1, rows):
+                    # Draw line in the middle of the gap between rows
+                    y_line = int(margin_px + offset_y_px + row * photo_h_px + (row - 0.5) * row_gap_px)
+                    x_start = int(margin_px + offset_x_px)
+                    x_end = int(margin_px + offset_x_px + grid_width_px)
+                    
+                    # Draw dashed line
+                    x_current = x_start
+                    while x_current < x_end:
+                        x_next = min(x_current + dash_length, x_end)
+                        draw.line([(x_current, y_line), (x_next, y_line)], fill=line_color, width=1)
+                        x_current = x_next + gap_length
+            
+            # Vertical cut lines between columns (in the gap)
+            if cols > 1:
+                for col in range(1, cols):
+                    # Draw line in the middle of the gap between columns
+                    x_line = int(margin_px + offset_x_px + col * photo_w_px + (col - 0.5) * col_gap_px)
+                    y_start = int(margin_px + offset_y_px)
+                    y_end = int(margin_px + offset_y_px + grid_height_px)
+                    
+                    # Draw dashed line
+                    y_current = y_start
+                    while y_current < y_end:
+                        y_next = min(y_current + dash_length, y_end)
+                        draw.line([(x_line, y_current), (x_line, y_next)], fill=line_color, width=1)
+                        y_current = y_next + gap_length
 
         pages.append(page)
 
