@@ -186,8 +186,8 @@ document.addEventListener("DOMContentLoaded", () => {
     colGap.value = CONFIG.default_col_gap_cm;
     rowGap.value = CONFIG.default_row_gap_cm;
 
-    document.querySelector('[name="cut_lines"]').value =
-        CONFIG.default_cut_lines ? "yes" : "no";
+    document.querySelector('[name="cut_line_type"]').value =
+        CONFIG.default_cut_lines ? "full" : "none";
 
     document.querySelector('[name="output_type"]').value =
         CONFIG.default_output_type;
