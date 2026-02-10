@@ -101,7 +101,9 @@ def remove_background_api(request):
                 image_bytes = buffer.getvalue()
             
             # Use u2net_human_seg model - faster and lighter for portraits
-            output_bytes = remove(image_bytes, model_name='u2net_human_seg')
+            from rembg import new_session
+            session = new_session('u2net_human_seg')
+            output_bytes = remove(image_bytes, session=session)
             logger.info(f"Background removed, output size: {len(output_bytes)} bytes")
         except Exception as e:
             logger.error(f"rembg processing failed: {e}", exc_info=True)

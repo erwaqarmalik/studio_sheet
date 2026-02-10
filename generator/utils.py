@@ -226,7 +226,9 @@ def remove_background(image_path: str, bg_color: str = "#FFFFFF") -> bool:
         input_data = buffer.getvalue()
         
         # Remove background with lighter model
-        output_data = remove(input_data, model_name='u2net_human_seg')
+        from rembg import new_session
+        session = new_session('u2net_human_seg')
+        output_data = remove(input_data, session=session)
         
         # Open as PIL Image
         img = Image.open(io.BytesIO(output_data)).convert("RGBA")

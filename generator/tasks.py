@@ -137,9 +137,10 @@ def remove_background_task(self, image_data, bg_color):
             img_temp.save(buffer, format='PNG')
             image_bytes = buffer.getvalue()
         
-        from rembg import remove
+        from rembg import remove, new_session
         # Use lighter u2net_human_seg model for passport photos
-        output_bytes = remove(image_bytes, model_name='u2net_human_seg')
+        session = new_session('u2net_human_seg')
+        output_bytes = remove(image_bytes, session=session)
         img = Image.open(io.BytesIO(output_bytes)).convert("RGBA")
 
         hex_color = bg_color.lstrip('#').strip().upper()
