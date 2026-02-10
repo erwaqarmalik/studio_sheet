@@ -82,9 +82,16 @@ async function loadBackgroundRemovalModel() {
  */
 async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF') {
     try {
+        console.log('[BG-Removal] Starting client-side background removal');
+        console.log('[BG-Removal] Libraries available:', typeof window.bodySegmentation !== 'undefined');
+        
         // Load model if not already loaded
         if (!backgroundRemovalModel) {
+            console.log('[BG-Removal] Loading model...');
             await loadBackgroundRemovalModel();
+            console.log('[BG-Removal] Model loaded successfully');
+        } else {
+            console.log('[BG-Removal] Using cached model');
         }
         
         // Load image into canvas
@@ -94,6 +101,7 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF') {
         return new Promise((resolve, reject) => {
             img.onload = async () => {
                 try {
+                    console.log('[BG-Removal] Image loaded, dimensions:', img.width, 'x', img.height);
                     // Create canvas and draw image
                     const canvas = document.createElement('canvas');
                     canvas.width = img.width;
@@ -101,9 +109,7 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF') {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0);
                     
-                    // Perform segmentation with proper config
-                    // multiSegmentation: false = all people in one output
-                    // segmentBodyParts: false = only foreground/background segmentation
+                    console.log('[BG-Removal] Running segmentation...');
                     const segmentationConfig = {
                         multiSegmentation: false,
                         segmentBodyParts: false,
@@ -177,9 +183,11 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF') {
                     
                     // Return as data URL
                     const resultDataUrl = outputCanvas.toDataURL('image/jpeg', 0.95);
+                    console.log('[BG-Removal] Client-side processing complete, returning result');
                     resolve(resultDataUrl);
                     
                 } catch (error) {
+                    console.error('[BG-Removal] Error in onload:', error);
                     reject(error);
                 }
             };
@@ -192,7 +200,9 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF') {
         });
         
     } catch (error) {
-        console.error('Background removal error:', error);
+        console.error('[BG-Removal] Error:', error);
+        console.error('[BG-Removal] Error message:', error.message);
+        console.error('[BG-Removal] Error stack:', error.stack);
         throw error;
     }
 }
