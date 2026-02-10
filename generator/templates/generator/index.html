@@ -440,6 +440,15 @@
 
 <!-- Cropper.js JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Require the peer dependencies of body-segmentation -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+<!-- TF.js backend for WebGL -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<!-- Body Segmentation model -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation"></script>
+<!-- ✅ Background Removal JS (client-side) -->
+<script src="{% static 'generator/bg-removal.js' %}"></script>
 <!-- ✅ JS via Django static -->
 <script src="{% static 'generator/app.js' %}"></script>
 

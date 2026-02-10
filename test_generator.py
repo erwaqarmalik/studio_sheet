@@ -12,7 +12,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'passport_app.settings')
 django.setup()
 
-from generator.utils import generate_pdf, generate_jpeg
+from generator.utils import generate_pdf, generate_jpeg, remove_background
+import shutil
 
 
 def test_pdf_generation(image_path, output_dir="test_output"):
@@ -185,7 +186,91 @@ def test_jpeg_generation(image_path, output_dir="test_output"):
     return results
 
 
-def print_summary(pdf_results, jpeg_results):
+def test_background_removal(image_path, output_dir="test_output"):
+    """Test background removal with different background colors"""
+    print("\n" + "="*60)
+    print("TESTING BACKGROUND REMOVAL")
+    print("="*60)
+    
+    # Create output directory
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Test configurations
+    test_configs = [
+        {
+            "name": "White background (#FFFFFF)",
+            "bg_color": "#FFFFFF",
+        },
+        {
+            "name": "Light blue background (#E0F0FF)",
+            "bg_color": "#E0F0FF",
+        },
+        {
+            "name": "Light gray background (#F0F0F0)",
+            "bg_color": "#F0F0F0",
+        },
+        {
+            "name": "Cream background (#FFF8DC)",
+            "bg_color": "#FFF8DC",
+        },
+    ]
+    
+    results = []
+    for i, config in enumerate(test_configs, 1):
+        print(f"\nTest {i}: {config['name']}")
+        print("-" * 60)
+        
+        try:
+            # Create a copy of the image for testing
+            test_image_name = f"bg_removed_{config['bg_color'].replace('#', '')}.jpg"
+            test_image_path = os.path.join(output_dir, test_image_name)
+            shutil.copy2(image_path, test_image_path)
+            
+            original_size = os.path.getsize(test_image_path) / 1024
+            print(f"  Original size: {original_size:.2f} KB")
+            print(f"  Removing background with {config['bg_color']}...")
+            
+            # Perform background removal
+            success = remove_background(test_image_path, config['bg_color'])
+            
+            if success and os.path.exists(test_image_path):
+                processed_size = os.path.getsize(test_image_path) / 1024
+                print(f"✓ SUCCESS: Background removed")
+                print(f"  Processed size: {processed_size:.2f} KB")
+                print(f"  Output: {test_image_path}")
+                results.append((config['name'], True, test_image_path))
+            else:
+                print(f"✗ FAILED: Background removal unsuccessful")
+                results.append((config['name'], False, None))
+                
+        except Exception as e:
+            print(f"✗ ERROR: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            results.append((config['name'], False, None))
+    
+    # Test with invalid color
+    print(f"\nTest {len(test_configs) + 1}: Invalid color format (should fail gracefully)")
+    print("-" * 60)
+    try:
+        test_image_path = os.path.join(output_dir, "bg_removed_invalid.jpg")
+        shutil.copy2(image_path, test_image_path)
+        success = remove_background(test_image_path, "invalid_color")
+        if not success:
+            print(f"✓ SUCCESS: Handled invalid color gracefully")
+            results.append(("Invalid color handling", True, None))
+        else:
+            print(f"✗ FAILED: Should have rejected invalid color")
+            results.append(("Invalid color handling", False, None))
+    except Exception as e:
+        print(f"✓ SUCCESS: Exception caught for invalid color - {str(e)}")
+        results.append(("Invalid color handling", True, None))
+    
+    return results
+
+
+
+def print_summary(pdf_results, jpeg_results, bg_results=None):
     """Print test summary"""
     print("\n" + "="*60)
     print("TEST SUMMARY")
@@ -207,6 +292,17 @@ def print_summary(pdf_results, jpeg_results):
     
     total_passed = pdf_passed + jpeg_passed
     total_tests = len(pdf_results) + len(jpeg_results)
+    
+    if bg_results:
+        print("\nBackground Removal:")
+        bg_passed = sum(1 for _, success, _ in bg_results if success)
+        print(f"  Passed: {bg_passed}/{len(bg_results)}")
+        for name, success, _ in bg_results:
+            status = "✓" if success else "✗"
+            print(f"  {status} {name}")
+        total_passed += bg_passed
+        total_tests += len(bg_results)
+    
     print(f"\nOverall: {total_passed}/{total_tests} tests passed")
     
     if total_passed == total_tests:
@@ -217,12 +313,16 @@ def print_summary(pdf_results, jpeg_results):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python test_generator.py <image_path>")
+        print("Usage: python test_generator.py <image_path> [--skip-bg]")
         print("\nExample:")
         print("  python test_generator.py media/uploads/test_photo.jpg")
+        print("  python test_generator.py media/uploads/test_photo.jpg --skip-bg")
+        print("\nOptions:")
+        print("  --skip-bg    Skip background removal tests (faster)")
         sys.exit(1)
     
     image_path = sys.argv[1]
+    skip_bg = "--skip-bg" in sys.argv
     
     # Validate image path
     if not os.path.exists(image_path):
@@ -239,8 +339,16 @@ def main():
     pdf_results = test_pdf_generation(image_path)
     jpeg_results = test_jpeg_generation(image_path)
     
+    bg_results = None
+    if not skip_bg:
+        print("\n⚠️  Background removal test may take 30-60 seconds on first run (model download)")
+        print("    Use --skip-bg flag to skip these tests\n")
+        bg_results = test_background_removal(image_path)
+    else:
+        print("\n⏭️  Skipping background removal tests (--skip-bg flag used)")
+    
     # Print summary
-    print_summary(pdf_results, jpeg_results)
+    print_summary(pdf_results, jpeg_results, bg_results)
     
     print("\n" + "="*60)
     print(f"Test output saved to: {os.path.abspath('test_output')}")

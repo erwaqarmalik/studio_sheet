@@ -923,23 +923,26 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         
-        // Show warning for first-time users
-        if (!sessionStorage.getItem('bgRemovalWarningShown')) {
-            const proceed = confirm('Background removal may take 10-30 seconds depending on image size and server load. The page may appear unresponsive during processing. Continue?');
-            if (!proceed) return;
-            sessionStorage.setItem('bgRemovalWarningShown', 'true');
-        }
-        
         bgRemovalApply.disabled = true;
-        bgRemovalApply.textContent = 'Processing... (may take 10-30 sec)';
+        bgRemovalApply.textContent = 'Processing...';
         
         try {
             const bgColor = bgRemovalColorPicker.value;
-
+            let processedDataUrl;
             
-            // Call API for AI-powered background removal
-            const processedDataUrl = await removeBackgroundAPI(currentBgRemovalDataUrl, bgColor);
-
+            // Try client-side first (fast, in browser)
+            try {
+                if (progressCallback) bgRemovalApply.textContent = 'Processing (client-side)...';
+                processedDataUrl = await removeBackgroundClientSide(currentBgRemovalDataUrl, bgColor, (status) => {
+                    bgRemovalApply.textContent = `${status}`;
+                });
+                console.log('Client-side background removal succeeded');
+            } catch (clientError) {
+                // Fall back to server-side if client-side fails
+                console.warn('Client-side failed, falling back to server:', clientError);
+                bgRemovalApply.textContent = 'Processing (server)...';
+                processedDataUrl = await removeBackgroundAPI(currentBgRemovalDataUrl, bgColor);
+            }
 
             // Convert data URL to blob
             const response = await fetch(processedDataUrl);
