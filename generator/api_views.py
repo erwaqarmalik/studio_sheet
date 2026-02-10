@@ -82,7 +82,26 @@ def remove_background_api(request):
         # Process image with rembg (sync fallback)
         try:
             logger.info(f"Processing image, size: {len(image_bytes)} bytes")
-            output_bytes = remove(image_bytes)
+            
+            # Optimize: Resize large images before processing to reduce memory/CPU usage
+            img = Image.open(io.BytesIO(image_bytes))
+            original_size = img.size
+            max_dimension = 2000  # Max width or height
+            
+            # Resize if image is too large
+            if max(img.size) > max_dimension:
+                ratio = max_dimension / max(img.size)
+                new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
+                img = img.resize(new_size, Image.LANCZOS)
+                logger.info(f"Resized from {original_size} to {new_size} for faster processing")
+                
+                # Convert back to bytes
+                buffer = io.BytesIO()
+                img.save(buffer, format='PNG')
+                image_bytes = buffer.getvalue()
+            
+            # Use u2net_human_seg model - faster and lighter for portraits
+            output_bytes = remove(image_bytes, model_name='u2net_human_seg')
             logger.info(f"Background removed, output size: {len(output_bytes)} bytes")
         except Exception as e:
             logger.error(f"rembg processing failed: {e}", exc_info=True)

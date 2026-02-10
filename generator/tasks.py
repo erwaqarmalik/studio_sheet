@@ -120,14 +120,26 @@ def generate_photosheet_task(
 
 @shared_task(bind=True)
 def remove_background_task(self, image_data, bg_color):
-    """Remove background asynchronously and return base64 image data."""
+    """Remove background asynchronously and return base64 image data. Optimized for limited resources."""
     try:
         if ',' in image_data:
             image_data = image_data.split(',')[1]
 
         image_bytes = base64.b64decode(image_data)
+        
+        # Optimize: Resize large images
+        img_temp = Image.open(io.BytesIO(image_bytes))
+        if max(img_temp.size) > 2000:
+            ratio = 2000 / max(img_temp.size)
+            new_size = (int(img_temp.size[0] * ratio), int(img_temp.size[1] * ratio))
+            img_temp = img_temp.resize(new_size, Image.LANCZOS)
+            buffer = io.BytesIO()
+            img_temp.save(buffer, format='PNG')
+            image_bytes = buffer.getvalue()
+        
         from rembg import remove
-        output_bytes = remove(image_bytes)
+        # Use lighter u2net_human_seg model for passport photos
+        output_bytes = remove(image_bytes, model_name='u2net_human_seg')
         img = Image.open(io.BytesIO(output_bytes)).convert("RGBA")
 
         hex_color = bg_color.lstrip('#').strip().upper()

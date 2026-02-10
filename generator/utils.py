@@ -196,6 +196,7 @@ def crop_to_passport_aspect_ratio(image_path: str, width_cm: float = None, heigh
 def remove_background(image_path: str, bg_color: str = "#FFFFFF") -> bool:
     """
     Remove background from an image and replace with solid color.
+    Optimized for limited server resources.
     
     Args:
         image_path: Path to the image file
@@ -207,12 +208,25 @@ def remove_background(image_path: str, bg_color: str = "#FFFFFF") -> bool:
     try:
         from rembg import remove
         
-        # Open original image
-        with open(image_path, 'rb') as f:
-            input_data = f.read()
+        # Open and potentially resize image
+        img = Image.open(image_path)
+        original_size = img.size
+        max_dimension = 2000  # Limit for memory efficiency
         
-        # Remove background
-        output_data = remove(input_data)
+        # Resize if too large
+        if max(img.size) > max_dimension:
+            ratio = max_dimension / max(img.size)
+            new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
+            img = img.resize(new_size, Image.LANCZOS)
+            logger.info(f"Resized from {original_size} to {new_size} for processing")
+        
+        # Convert to bytes
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        input_data = buffer.getvalue()
+        
+        # Remove background with lighter model
+        output_data = remove(input_data, model_name='u2net_human_seg')
         
         # Open as PIL Image
         img = Image.open(io.BytesIO(output_data)).convert("RGBA")
