@@ -78,18 +78,14 @@ async function loadBackgroundRemovalModel() {
  * Perform background removal on an image
  * @param {string} imageDataUrl - Base64 data URL of the image
  * @param {string} bgColor - Hex color for background (e.g., '#FFFFFF')
- * @param {Function} progressCallback - Optional callback for progress updates
  * @returns {Promise<string>} - Data URL of processed image
  */
-async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF', progressCallback = null) {
+async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF') {
     try {
         // Load model if not already loaded
         if (!backgroundRemovalModel) {
-            if (progressCallback) progressCallback('Loading AI model...');
             await loadBackgroundRemovalModel();
         }
-        
-        if (progressCallback) progressCallback('Processing image...');
         
         // Load image into canvas
         const img = new Image();
@@ -104,8 +100,6 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF', pro
                     canvas.height = img.height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0);
-                    
-                    if (progressCallback) progressCallback('Segmenting person...');
                     
                     // Perform segmentation with proper config
                     // multiSegmentation: false = all people in one output
@@ -126,8 +120,6 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF', pro
                     if (!people || !people.length) {
                         throw new Error('Invalid segmentation result: ' + JSON.stringify(people));
                     }
-                    
-                    if (progressCallback) progressCallback('Applying background...');
                     
                     // Create output canvas
                     const outputCanvas = document.createElement('canvas');
@@ -182,8 +174,6 @@ async function removeBackgroundClientSide(imageDataUrl, bgColor = '#FFFFFF', pro
                     }
                     
                     outputCtx.putImageData(outputImageData, 0, 0);
-                    
-                    if (progressCallback) progressCallback('Complete!');
                     
                     // Return as data URL
                     const resultDataUrl = outputCanvas.toDataURL('image/jpeg', 0.95);

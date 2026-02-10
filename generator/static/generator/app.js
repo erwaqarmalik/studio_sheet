@@ -929,17 +929,18 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const bgColor = bgRemovalColorPicker.value;
             let processedDataUrl;
+            let isClientSide = false;
             
             // Try client-side first (fast, in browser)
             try {
-                if (progressCallback) bgRemovalApply.textContent = 'Processing (client-side)...';
-                processedDataUrl = await removeBackgroundClientSide(currentBgRemovalDataUrl, bgColor, (status) => {
-                    bgRemovalApply.textContent = `${status}`;
-                });
+                bgRemovalApply.textContent = 'Processing (client-side)...';
+                isClientSide = true;
+                processedDataUrl = await removeBackgroundClientSide(currentBgRemovalDataUrl, bgColor);
                 console.log('Client-side background removal succeeded');
             } catch (clientError) {
                 // Fall back to server-side if client-side fails
                 console.warn('Client-side failed, falling back to server:', clientError);
+                isClientSide = false;
                 bgRemovalApply.textContent = 'Processing (server)...';
                 processedDataUrl = await removeBackgroundAPI(currentBgRemovalDataUrl, bgColor);
             }
