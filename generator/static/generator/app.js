@@ -377,6 +377,9 @@ document.addEventListener("DOMContentLoaded", () => {
             fileList.splice(fileIndex, 1);
             fileDataMap.delete(file.name + file.size);
             croppedFilesMap.delete(fileIndex);
+            bgRemovedFilesMap.delete(fileIndex);
+            bgRemovedMap.delete(fileIndex);
+            
             // Update indices in croppedFilesMap
             const newCroppedMap = new Map();
             croppedFilesMap.forEach((value, key) => {
@@ -387,6 +390,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
             croppedFilesMap = newCroppedMap;
+            
+            // Update indices in bgRemovedFilesMap
+            const newBgRemovedFilesMap = new Map();
+            bgRemovedFilesMap.forEach((value, key) => {
+                if (key < fileIndex) {
+                    newBgRemovedFilesMap.set(key, value);
+                } else if (key > fileIndex) {
+                    newBgRemovedFilesMap.set(key - 1, value);
+                }
+            });
+            bgRemovedFilesMap = newBgRemovedFilesMap;
+            
+            // Update indices in bgRemovedMap
+            const newBgRemovedMap = new Map();
+            bgRemovedMap.forEach((value, key) => {
+                if (key < fileIndex) {
+                    newBgRemovedMap.set(key, value);
+                } else if (key > fileIndex) {
+                    newBgRemovedMap.set(key - 1, value);
+                }
+            });
+            bgRemovedMap = newBgRemovedMap;
+            
             renderPreview();
             updateFileInput();
         }
